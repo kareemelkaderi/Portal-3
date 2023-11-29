@@ -22,6 +22,8 @@ GLdouble aspectRatio = (GLdouble)WIDTH / (GLdouble)HEIGHT;
 GLdouble zNear = 0.1;
 GLdouble zFar = 100;
 
+int scene1Height = 25;
+
 class Vector3f {
 public:
 	float x, y, z;
@@ -61,7 +63,7 @@ class Camera {
 public:
 	Vector3f eye, center, up;
 
-	Camera(float eyeX = 0.0f, float eyeY = 10.0f, float eyeZ = 0.0f, float centerX = 0.0f, float centerY = 00.0f, float centerZ = 0.0f, float upX = 0.0f, float upY = 0.0f, float upZ = 1.0f) {
+	Camera(float eyeX = 15.0f, float eyeY = 5.0f, float eyeZ = 15.0f, float centerX = -15.0f, float centerY = 10.0f, float centerZ = -15.0f, float upX = 0.0f, float upY = 1.0f, float upZ = 0.0f) {
 		eye = Vector3f(eyeX, eyeY, eyeZ);
 		center = Vector3f(centerX, centerY, centerZ);
 		up = Vector3f(upX, upY, upZ);
@@ -115,12 +117,14 @@ Camera camera;
 // Model Variables
 Model_3DS model_house;
 Model_3DS model_tree;
-Model_3DS model_wall;
+Model_3DS model_spike;
+
 // Textures
 GLTexture tex_ground;
 GLTexture tex_wall;
 GLTexture tex_lava;
 GLTexture tex_ceiling;
+GLTexture tex_spike;
 
 //=======================================================================
 // Lighting Configuration Function
@@ -217,7 +221,7 @@ void RenderGround()
 {
 	glDisable(GL_LIGHTING);	// Disable lighting 
 
-	//glColor3f(0.6, 0.6, 0.6);	// Dim the ground texture a bit
+	glColor3f(0.8, 0, 0);	// Dim the ground texture a bit
 
 	glEnable(GL_TEXTURE_2D);	// Enable 2D texturing
 
@@ -291,16 +295,38 @@ void RenderCeiling() {
 	glBegin(GL_QUADS);
 	glNormal3f(0, 1, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
-	glVertex3f(-15, 15, -15);
+	glVertex3f(-15, scene1Height, -15);
 	glTexCoord2f(10, 0);
-	glVertex3f(-15, 15, 15);
+	glVertex3f(-15, scene1Height, 15);
 	glTexCoord2f(10, 10);
-	glVertex3f(15, 15, 15);
+	glVertex3f(15, scene1Height, 15);
 	glTexCoord2f(0, 10);
-	glVertex3f(15, 15, -15);
+	glVertex3f(15, scene1Height, -15);
 	glEnd();
 	glPopMatrix();
 
+	glColor3f(1, 1, 1);
+}
+
+void drawSpike() {
+	glPushMatrix();
+	glRotatef(90, 0, 0, 1);
+	glScalef(0.08, 0.08, 0.08);
+	model_spike.Draw();
+	//glutSolidCone(1, 2, 40, 40);
+	glPopMatrix();
+}
+
+void RenderSpike() {
+	//glColor3f(1, 1, 1);
+	for (int i = 0; i < 5; i++) {
+		for (int j = 0; j < 15; j++) {
+			glPushMatrix();
+			glTranslatef(j*2-14,4,i*2-14);
+			drawSpike();
+			glPopMatrix();
+		}
+	}
 	glColor3f(1, 1, 1);
 }
 
@@ -321,9 +347,9 @@ void RenderWall() {
 	glTexCoord2f(4, 0);
 	glVertex3f(-15, 0, 15);
 	glTexCoord2f(4, 4);
-	glVertex3f(-15, 15, 15);
+	glVertex3f(-15, scene1Height, 15);
 	glTexCoord2f(0, 4);
-	glVertex3f(-15, 15, -15);
+	glVertex3f(-15, scene1Height, -15);
 	glEnd();
 	glPopMatrix();
 
@@ -335,9 +361,9 @@ void RenderWall() {
 	glTexCoord2f(4, 0);
 	glVertex3f(15, 0, 15);
 	glTexCoord2f(4, 4);
-	glVertex3f(15, 15, 15);
+	glVertex3f(15, scene1Height, 15);
 	glTexCoord2f(0, 4);
-	glVertex3f(15, 15, -15);
+	glVertex3f(15, scene1Height, -15);
 	glEnd();
 	glPopMatrix();
 
@@ -349,9 +375,9 @@ void RenderWall() {
 	glTexCoord2f(4, 0);
 	glVertex3f(15, 0, 15);
 	glTexCoord2f(4, 4);
-	glVertex3f(15, 15, 15);
+	glVertex3f(15, scene1Height, 15);
 	glTexCoord2f(0, 4);
-	glVertex3f(-15, 15, 15);
+	glVertex3f(-15, scene1Height, 15);
 	glEnd();
 	glPopMatrix();
 
@@ -363,9 +389,9 @@ void RenderWall() {
 	glTexCoord2f(4, 0);
 	glVertex3f(15, 0, -15);
 	glTexCoord2f(4, 4);
-	glVertex3f(15, 15, -15);
+	glVertex3f(15, scene1Height, -15);
 	glTexCoord2f(0, 4);
-	glVertex3f(-15, 15, -15);
+	glVertex3f(-15, scene1Height, -15);
 	glEnd();
 	glPopMatrix();
 
@@ -460,12 +486,14 @@ void myDisplay(void)
 
 	RenderCeiling();
 
+	RenderSpike();
+
 	// Draw Tree Model
-	//glPushMatrix();
-	//glTranslatef(10, 0, 0);
-	//glScalef(0.7, 0.7, 0.7);
-	//model_tree.Draw();
-	//glPopMatrix();
+	glPushMatrix();
+	glTranslatef(0, 0, 0);
+	glScalef(0.1, 0.1, 0.1);
+	model_tree.Draw();
+	glPopMatrix();
 
 	// Draw house Model
 	//glPushMatrix();
@@ -609,13 +637,14 @@ void LoadAssets()
 {
 	// Loading Model files
 	model_house.Load("Models/house/house.3DS");
-	model_tree.Load("Models/tree/Tree1.3ds");
+	model_tree.Load("Models/mytree/tree1.3ds");
+	model_spike.Load("Models/mace/MACE.3ds");
 
 	// Loading texture files
 	tex_ground.Load("Textures/ground.bmp");
 	tex_wall.Load("Textures/concrete.bmp");
-	tex_lava.Load("Textures/lava.bmp");
 	tex_ceiling.Load("Textures/ceiling.bmp");
+	tex_lava.Load("Textures/lava.bmp");
 	loadBMP(&tex, "Textures/blu-sky-3.bmp", true);
 }
 
