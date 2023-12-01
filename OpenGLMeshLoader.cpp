@@ -9,6 +9,8 @@
 
 #define GLUT_KEY_ESCAPE 27
 #define DEG2RAD(a) (a * 0.0174532925)
+#define _CRT_SECURE_NO_WARNINGS
+#define TO_RADIANS 3.141592/180.0
 
 int WIDTH = 1280;
 int HEIGHT = 720;
@@ -23,6 +25,8 @@ GLdouble zNear = 0.1;
 GLdouble zFar = 100;
 
 int scene1Height = 25;
+float spikeHeight = 24.9;
+bool spikeForward = true;
 
 class Vector3f {
 public:
@@ -113,10 +117,15 @@ public:
 
 Camera camera;
 
+bool isFPV = false;
+int ww, hh;
+float xangle = 0.0f, yangle = 1.0f, zangle = -1.0f; // Camera angles
+float x_pos = 0.0f, y_pos = 0.0f; // Camera yaw
+float sensitivity = 0.005f;
+
 
 // Model Variables
 Model_3DS model_house;
-Model_3DS model_tree;
 Model_3DS model_spike;
 
 // Textures
@@ -125,6 +134,11 @@ GLTexture tex_wall;
 GLTexture tex_lava;
 GLTexture tex_ceiling;
 GLTexture tex_spike;
+
+float playerX = 0;
+float playerY = 4;
+float playerZ = 7.5;
+bool keystates[256];
 
 //=======================================================================
 // Lighting Configuration Function
@@ -308,10 +322,35 @@ void RenderCeiling() {
 	glColor3f(1, 1, 1);
 }
 
-void drawSpike() {
+void RenderPlayer() {
+	float dx = playerX - (playerX - xangle);
+	float dz = playerZ - (playerZ - zangle);
+	float angle = atan2(dx, dz) * (180.0f / 3.141592);
+	glColor3f(0, 0, 1);
 	glPushMatrix();
+	glTranslatef(playerX, playerY, playerZ);
+	glScalef(1, 4, 1);
+	glRotatef(angle, 0, 1, 0);
+	glTranslatef(0, 0.5, 0);
+	glutSolidCube(1);
+	glPopMatrix();
+}
+
+void drawSpike() {
+
+	glColor3f(1,0 , 0);
+	glPushMatrix();
+	glTranslatef(0, spikeHeight,-4.5);
+	glScalef(15,scene1Height,10);
+	glTranslatef(0, 0.5, 0);
+	glutSolidCube(1);
+	glPopMatrix();
+
+	glColor3f(1, 1, 1);
+	glPushMatrix();
+	glTranslatef(0, spikeHeight-2.5,0);
 	glRotatef(90, 0, 0, 1);
-	glScalef(0.08, 0.08, 0.08);
+	glScalef(0.4, 0.4, 0.4);
 	model_spike.Draw();
 	//glutSolidCone(1, 2, 40, 40);
 	glPopMatrix();
@@ -322,7 +361,7 @@ void RenderSpike() {
 	for (int i = 0; i < 5; i++) {
 		for (int j = 0; j < 15; j++) {
 			glPushMatrix();
-			glTranslatef(j*2-14,4,i*2-14);
+			glTranslatef(j*2-14,0,i*2-14);
 			drawSpike();
 			glPopMatrix();
 		}
@@ -470,8 +509,23 @@ void setupCamera() {
 void myDisplay(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	setupCamera();
+	//setupCamera();
+	glLoadIdentity();
 
+	if (isFPV) {
+		gluLookAt(playerX, playerY, playerZ, playerX + xangle, playerY - yangle, playerZ + zangle, 0.0f, playerY, 0.0f);
+	}
+	else {
+		float cameraOffsetX = -3.0f * xangle; 
+		float cameraOffsetY = 4.0f + yangle;
+		float cameraOffsetZ = -3.0f * zangle;
+
+		float cameraX = playerX + cameraOffsetX;
+		float cameraY = playerY + cameraOffsetY;
+		float cameraZ = playerZ + cameraOffsetZ;
+		gluLookAt(cameraX, cameraY, cameraZ, playerX, playerY + 4, playerZ, 0.0f, playerY, 0.0f);
+		RenderPlayer();
+	}
 
 
 	GLfloat lightIntensity[] = { 0.7, 0.7, 0.7, 1.0f };
@@ -488,12 +542,13 @@ void myDisplay(void)
 
 	RenderSpike();
 
+
 	// Draw Tree Model
-	glPushMatrix();
-	glTranslatef(0, 0, 0);
-	glScalef(0.1, 0.1, 0.1);
-	model_tree.Draw();
-	glPopMatrix();
+	//glPushMatrix();
+	//glTranslatef(0, 0, 0);
+	//glScalef(0.1, 0.1, 0.1);
+	//model_tree.Draw();
+	//glPopMatrix();
 
 	// Draw house Model
 	//glPushMatrix();
@@ -533,32 +588,22 @@ void myDisplay(void)
 //=======================================================================
 // Keyboard Function
 //=======================================================================
-void myKeyboard(unsigned char button, int x, int y)
-{
-	float d = 1;
+
+void KeyboardDown(unsigned char button, int x, int y) {
+	keystates[button] = true;
 
 	switch (button) {
-	case 'w':
-		camera.moveY(d);
+	case 'f':
+		isFPV = true;
 		break;
-	case 's':
-		camera.moveY(-d);
-		break;
-	case 'a':
-		camera.moveX(d);
-		break;
-	case 'd':
-		camera.moveX(-d);
-		break;
-	case 'q':
-		camera.moveZ(d);
-		break;
-	case 'e':
-		camera.moveZ(-d);
+	case 't':
+		isFPV = false;
 		break;
 	}
+}
 
-	glutPostRedisplay();
+void KeyboardUp(unsigned char button, int x, int y) {
+	keystates[button] = false;
 }
 
 //=======================================================================
@@ -637,7 +682,7 @@ void LoadAssets()
 {
 	// Loading Model files
 	model_house.Load("Models/house/house.3DS");
-	model_tree.Load("Models/mytree/tree1.3ds");
+	//model_tree.Load("Models/mytree/tree1.3ds");
 	model_spike.Load("Models/mace/MACE.3ds");
 
 	// Loading texture files
@@ -646,6 +691,16 @@ void LoadAssets()
 	tex_ceiling.Load("Textures/ceiling.bmp");
 	tex_lava.Load("Textures/lava.bmp");
 	loadBMP(&tex, "Textures/blu-sky-3.bmp", true);
+}
+
+void Mouse(int xx, int yy) {
+	bool goingUp = false;
+	x_pos = (xx - ww / 2) * sensitivity;
+	y_pos = ((yy / (hh / 180.0)) - 90) * TO_RADIANS;
+
+	xangle = sin(x_pos);
+	yangle = sin(y_pos);
+	zangle = -cos(x_pos);
 }
 
 void Special(int key, int x, int y) {
@@ -669,6 +724,74 @@ void Special(int key, int x, int y) {
 	glutPostRedisplay();
 }
 
+void movementTimer(int value) {
+	float speed = 0.1;
+	if (keystates['w']) { // Forward
+		playerX += xangle * speed;
+		playerZ += zangle * speed;
+	}
+	if (keystates['s']) { // Backward
+		playerX -= xangle * speed;
+		playerZ -= zangle * speed;
+	}
+	if (keystates['d']) { // Right
+		playerX -= zangle * speed;
+		playerZ += xangle * speed;
+	}
+	if (keystates['a']) { // Left
+		playerX += zangle * speed;
+		playerZ -= xangle * speed;
+	}
+
+	glutPostRedisplay();
+	glutTimerFunc(16, movementTimer, 0);
+}
+
+void spikeTimer(int value) {
+	if (spikeHeight <= 2.5) {
+		spikeForward = false;
+	}
+	if (spikeHeight >= 24.9) {
+		spikeForward = true;
+	}
+	if (spikeForward) {
+		spikeHeight -= 0.02;
+	}
+	else {
+		spikeHeight += 0.02;
+	}
+	glutPostRedisplay();
+	glutTimerFunc(10, spikeTimer, 0);
+}
+
+void resize(int w, int h) {
+
+	// Setting ratio and new window size
+	float ratio = w * 1.0 / h;
+	ww = w;
+	hh = h;
+
+	// Setting the viewport
+	glViewport(0, 0, w, h);
+
+	// Setting the projection 
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+	// Set the correct perspective.
+	gluPerspective(45.0f, ratio, 0.1f, 100.0f);
+
+	//glOrtho(-10.0, 10.0, -10.0, 10.0, 0.0, 10.0); 
+
+	// Resettign the modelview matrix 
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	// Redisplay the scene
+	glutPostRedisplay();
+
+}
+
 //=======================================================================
 // Main Function
 //=======================================================================
@@ -676,26 +799,25 @@ void main(int argc, char** argv)
 {
 	glutInit(&argc, argv);
 
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 
-	glutInitWindowSize(WIDTH, HEIGHT);
+	glutInitWindowSize(1500, 1000);
 
-	glutInitWindowPosition(100, 150);
+	glutInitWindowPosition(0, 0);
 
 	glutCreateWindow(title);
 
 	glutDisplayFunc(myDisplay);
 
-	glutKeyboardFunc(myKeyboard);
-
+	glutReshapeFunc(resize);
+	glutKeyboardFunc(KeyboardDown);
+	glutKeyboardUpFunc(KeyboardUp);
+	glutSetCursor(GLUT_CURSOR_NONE);
 	glutSpecialFunc(Special);
-	//glutMotionFunc(myMotion);
 
-	//glutMouseFunc(myMouse);
-
-	glutReshapeFunc(myReshape);
-
-	myInit();
+	glutTimerFunc(0, movementTimer, 0);
+	glutTimerFunc(0, spikeTimer, 0);
+	glutPassiveMotionFunc(Mouse);
 
 	LoadAssets();
 	glEnable(GL_DEPTH_TEST);
