@@ -27,6 +27,9 @@ GLdouble zFar = 100;
 int scene1Height = 25;
 float spikeHeight = 24.9;
 bool spikeForward = true;
+float lightSourceX = 0.0f;
+float lightSourceY = scene1Height;
+float lightSourceZ = 0.0f;
 
 class Vector3f {
 public:
@@ -167,6 +170,24 @@ void InitLightSource()
 	// Finally, define light source 0 position in World Space
 	GLfloat light_position[] = { 0.0f, 10.0f, 0.0f, 1.0f };
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+
+	glEnable(GL_LIGHT1);
+
+	// Define Light source 1 ambient light
+	GLfloat ambient1[] = { 0.1f, 0.1f, 0.1, 1.0f };
+	glLightfv(GL_LIGHT1, GL_AMBIENT, ambient1);
+
+	// Define Light source 1 diffuse light
+	GLfloat diffuse1[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse1);
+
+	// Define Light source 1 Specular light
+	GLfloat specular1[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glLightfv(GL_LIGHT1, GL_SPECULAR, specular1);
+
+	// Set the initial position of the moving light source
+	GLfloat lightSourcePosition[] = { lightSourceX, lightSourceY, lightSourceZ, 1.0f };
+	glLightfv(GL_LIGHT1, GL_POSITION, lightSourcePosition);
 }
 
 //=======================================================================
@@ -532,6 +553,9 @@ void myDisplay(void)
 	GLfloat lightPosition[] = { 0.0f, 100.0f, 0.0f, 0.0f };
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, lightIntensity);
+
+	GLfloat lightSourcePosition[] = { lightSourceX, lightSourceY, lightSourceZ, 1.0f };
+	glLightfv(GL_LIGHT1, GL_POSITION, lightSourcePosition);
 
 	// Draw Ground
 	RenderGround();
