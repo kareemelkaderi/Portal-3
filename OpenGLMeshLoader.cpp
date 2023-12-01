@@ -18,6 +18,9 @@ int HEIGHT = 720;
 GLuint tex;
 char title[] = "3D Model Loader Sample";
 
+float wallHalfLength = 15.0;
+float wallHalfWidth = 15.0;
+
 // 3D Projection Options
 GLdouble fovy = 45.0;
 GLdouble aspectRatio = (GLdouble)WIDTH / (GLdouble)HEIGHT;
@@ -130,6 +133,7 @@ float sensitivity = 0.005f;
 // Model Variables
 Model_3DS model_house;
 Model_3DS model_spike;
+Model_3DS model_player;
 
 // Textures
 GLTexture tex_ground;
@@ -353,7 +357,8 @@ void RenderPlayer() {
 	glScalef(1, 4, 1);
 	glRotatef(angle, 0, 1, 0);
 	glTranslatef(0, 0.5, 0);
-	glutSolidCube(1);
+	model_player.Draw();
+	//glutSolidCube(1);
 	glPopMatrix();
 }
 
@@ -403,13 +408,13 @@ void RenderWall() {
 	glBegin(GL_QUADS);
 	glNormal3f(0, 1, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
-	glVertex3f(-15, 0, -15);
+	glVertex3f(-wallHalfLength, 0, -wallHalfWidth);
 	glTexCoord2f(4, 0);
-	glVertex3f(-15, 0, 15);
+	glVertex3f(-wallHalfLength, 0, wallHalfWidth);
 	glTexCoord2f(4, 4);
-	glVertex3f(-15, scene1Height, 15);
+	glVertex3f(-wallHalfLength, scene1Height, wallHalfWidth);
 	glTexCoord2f(0, 4);
-	glVertex3f(-15, scene1Height, -15);
+	glVertex3f(-wallHalfLength, scene1Height, -wallHalfWidth);
 	glEnd();
 	glPopMatrix();
 
@@ -417,13 +422,13 @@ void RenderWall() {
 	glBegin(GL_QUADS);
 	glNormal3f(0, 1, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
-	glVertex3f(15, 0, -15);
+	glVertex3f(wallHalfLength, 0, -wallHalfWidth);
 	glTexCoord2f(4, 0);
-	glVertex3f(15, 0, 15);
+	glVertex3f(wallHalfLength, 0, wallHalfWidth);
 	glTexCoord2f(4, 4);
-	glVertex3f(15, scene1Height, 15);
+	glVertex3f(wallHalfLength, scene1Height, wallHalfWidth);
 	glTexCoord2f(0, 4);
-	glVertex3f(15, scene1Height, -15);
+	glVertex3f(wallHalfLength, scene1Height, -wallHalfWidth);
 	glEnd();
 	glPopMatrix();
 
@@ -431,13 +436,13 @@ void RenderWall() {
 	glBegin(GL_QUADS);
 	glNormal3f(0, 1, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
-	glVertex3f(-15, 0, 15);
+	glVertex3f(-wallHalfLength, 0, wallHalfWidth);
 	glTexCoord2f(4, 0);
-	glVertex3f(15, 0, 15);
+	glVertex3f(wallHalfLength, 0, wallHalfWidth);
 	glTexCoord2f(4, 4);
-	glVertex3f(15, scene1Height, 15);
+	glVertex3f(wallHalfLength, scene1Height, wallHalfWidth);
 	glTexCoord2f(0, 4);
-	glVertex3f(-15, scene1Height, 15);
+	glVertex3f(-wallHalfLength, scene1Height, wallHalfWidth);
 	glEnd();
 	glPopMatrix();
 
@@ -445,13 +450,13 @@ void RenderWall() {
 	glBegin(GL_QUADS);
 	glNormal3f(0, 1, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
-	glVertex3f(-15, 0, -15);
+	glVertex3f(-wallHalfLength, 0, -wallHalfWidth);
 	glTexCoord2f(4, 0);
-	glVertex3f(15, 0, -15);
+	glVertex3f(wallHalfLength, 0, -15);
 	glTexCoord2f(4, 4);
-	glVertex3f(15, scene1Height, -15);
+	glVertex3f(wallHalfLength, scene1Height, -wallHalfWidth);
 	glTexCoord2f(0, 4);
-	glVertex3f(-15, scene1Height, -15);
+	glVertex3f(-wallHalfLength, scene1Height, -wallHalfWidth);
 	glEnd();
 	glPopMatrix();
 
@@ -459,13 +464,13 @@ void RenderWall() {
 	glBegin(GL_QUADS);
 	glNormal3f(0, 1, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
-	glVertex3f(-15, -5, -5);
+	glVertex3f(-wallHalfLength, -5, -5);
 	glTexCoord2f(4, 0);
-	glVertex3f(-15, 0, -5);
+	glVertex3f(-wallHalfLength, 0, -5);
 	glTexCoord2f(4, 4);
-	glVertex3f(-15, 0, 5);
+	glVertex3f(-wallHalfLength, 0, 5);
 	glTexCoord2f(0, 4);
-	glVertex3f(-15, -5, 5);
+	glVertex3f(-wallHalfLength, -5, 5);
 	glEnd();
 	glPopMatrix();
 
@@ -473,13 +478,13 @@ void RenderWall() {
 	glBegin(GL_QUADS);
 	glNormal3f(0, 1, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
-	glVertex3f(15, -5, -5);
+	glVertex3f(wallHalfLength, -5, -5);
 	glTexCoord2f(4, 0);
-	glVertex3f(15, 0, -5);
+	glVertex3f(wallHalfLength, 0, -5);
 	glTexCoord2f(4, 4);
-	glVertex3f(15, 0, 5);
+	glVertex3f(wallHalfLength, 0, 5);
 	glTexCoord2f(0, 4);
-	glVertex3f(15, -5, 5);
+	glVertex3f(wallHalfLength, -5, 5);
 	glEnd();
 	glPopMatrix();
 
@@ -487,13 +492,13 @@ void RenderWall() {
 	glBegin(GL_QUADS);
 	glNormal3f(0, 1, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
-	glVertex3f(15, -5, -5);
+	glVertex3f(wallHalfLength, -5, -5);
 	glTexCoord2f(4, 0);
-	glVertex3f(15, 0, -5);
+	glVertex3f(wallHalfLength, 0, -5);
 	glTexCoord2f(4, 4);
-	glVertex3f(-15, 0, -5);
+	glVertex3f(-wallHalfLength, 0, -5);
 	glTexCoord2f(0, 4);
-	glVertex3f(-15, -5, -5);
+	glVertex3f(-wallHalfLength, -5, -5);
 	glEnd();
 	glPopMatrix();
 
@@ -501,13 +506,13 @@ void RenderWall() {
 	glBegin(GL_QUADS);
 	glNormal3f(0, 1, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
-	glVertex3f(15, -5, 5);
+	glVertex3f(wallHalfLength, -5, 5);
 	glTexCoord2f(4, 0);
-	glVertex3f(15, 0, 5);
+	glVertex3f(wallHalfLength, 0, 5);
 	glTexCoord2f(4, 4);
-	glVertex3f(-15, 0, 5);
+	glVertex3f(-wallHalfLength, 0, 5);
 	glTexCoord2f(0, 4);
-	glVertex3f(-15, -5, 5);
+	glVertex3f(-wallHalfLength, -5, 5);
 	glEnd();
 	glPopMatrix();
 
@@ -586,7 +591,7 @@ void myDisplay(void)
 	//glRotatef(90.f, 1, 0, 0);
 	//model_wall.Draw();
 	//glPopMatrix();
-
+	//model_player.Draw();
 
 	//sky box
 	glPushMatrix();
@@ -708,6 +713,7 @@ void LoadAssets()
 	model_house.Load("Models/house/house.3DS");
 	//model_tree.Load("Models/mytree/tree1.3ds");
 	model_spike.Load("Models/mace/MACE.3ds");
+	model_player.Load("Models/player/robot.3ds");
 
 	// Loading texture files
 	tex_ground.Load("Textures/ground.bmp");
@@ -748,24 +754,53 @@ void Special(int key, int x, int y) {
 	glutPostRedisplay();
 }
 
+bool wallCollided(float x, float y) {
+	return (x >= wallHalfLength-0.2 || x <= -wallHalfLength + 0.2 || y >= wallHalfWidth - 0.2 || y <= -wallHalfWidth +0.2);
+}
+
 void movementTimer(int value) {
 	float speed = 0.1;
+	float newX = playerX;
+	float newZ = playerZ;
+
 	if (keystates['w']) { // Forward
-		playerX += xangle * speed;
-		playerZ += zangle * speed;
+		newX += xangle * speed;
+		newZ += zangle * speed;
 	}
 	if (keystates['s']) { // Backward
-		playerX -= xangle * speed;
-		playerZ -= zangle * speed;
+		newX -= xangle * speed;
+		newZ -= zangle * speed;
 	}
 	if (keystates['d']) { // Right
-		playerX -= zangle * speed;
-		playerZ += xangle * speed;
+		newX -= zangle * speed;
+		newZ += xangle * speed;
 	}
 	if (keystates['a']) { // Left
-		playerX += zangle * speed;
-		playerZ -= xangle * speed;
+		newX += zangle * speed;
+		newZ -= xangle * speed;
 	}
+
+	if (newX >= wallHalfLength - 0.2) {
+		newX = wallHalfLength - 0.2;
+	}
+	else if (newX <= -wallHalfLength + 0.2) {
+		newX = -wallHalfWidth + 0.2;
+	}
+
+	if (newZ >= wallHalfWidth - 0.2) {
+		newZ = wallHalfWidth - 0.2;
+	}
+	else if (newZ <= -wallHalfWidth + 0.2) {
+		newZ = -wallHalfWidth + 0.2;
+	}
+
+	playerX = newX;
+	playerZ = newZ;
+
+	//if (!wallCollided(newX, newZ)) {
+	//	playerX = newX;
+	//	playerZ = newZ;
+	//}
 
 	glutPostRedisplay();
 	glutTimerFunc(16, movementTimer, 0);
