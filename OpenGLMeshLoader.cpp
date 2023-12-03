@@ -143,8 +143,12 @@ Model_3DS model_spike;
 Model_3DS model_cube;
 Model_3DS model_gun;
 Model_3DS model_player;
+<<<<<<< HEAD
 Model_3DS model_crate;
 Model_3DS model_ring;
+=======
+Model_3DS model_button;
+>>>>>>> 0adeb3173577bde7976ddf22ea3691ce9f7db98c
 
 // Textures
 GLTexture tex_ground;
@@ -165,28 +169,23 @@ bool keystates[256];
 //=======================================================================
 void InitLightSource()
 {
-	// Enable Lighting for this OpenGL Program
 	glEnable(GL_LIGHTING);
-
-	// Enable Light Source number 0
-	// OpengL has 8 light sources
 	glEnable(GL_LIGHT0);
 
-	// Define Light source 0 ambient light
-	GLfloat ambient[] = { 0.1f, 0.1f, 0.1, 1.0f };
-	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+	GLfloat ambient[] = { 0.7f, 0.7f, 0.7, 1.0f };
+	GLfloat diffuse[] = { 0.6f, 0.6f, 0.6, 1.0f };
+	GLfloat specular[] = { 1.0f, 1.0f, 1.0, 1.0f };
+	GLfloat shininess[] = { 50 };
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
 
-	// Define Light source 0 diffuse light
-	GLfloat diffuse[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
+	GLfloat lightIntensity[] = { 0.7f, 0.7f, 1, 1.0f };
+	GLfloat lightPosition[] = { 0.0f, 0.0, 0.0f, 1.0f };
+	glLightfv(GL_LIGHT0, GL_POSITION, lightIntensity);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightIntensity);
 
-	// Define Light source 0 Specular light
-	GLfloat specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
-
-	// Finally, define light source 0 position in World Space
-	GLfloat light_position[] = { 0.0f, 10.0f, 0.0f, 1.0f };
-	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 }
 
 //=======================================================================
@@ -194,6 +193,7 @@ void InitLightSource()
 //======================================================================
 void InitMaterial()
 {
+
 	// Enable Material Tracking
 	glEnable(GL_COLOR_MATERIAL);
 
@@ -215,6 +215,8 @@ void InitMaterial()
 //=======================================================================
 void myInit(void)
 {
+	glEnable(GL_LIGHTING);
+
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 
 	glMatrixMode(GL_PROJECTION);
@@ -238,8 +240,6 @@ void myInit(void)
 	// AT (ax, ay, az):	 denotes the direction where the camera is aiming at.					 //
 	// UP (ux, uy, uz):  denotes the upward orientation of the camera.							 //
 	//*******************************************************************************************//
-
-	InitLightSource();
 
 	InitMaterial();
 
@@ -277,6 +277,12 @@ void RenderGround()
 	glPopMatrix();
 
 
+<<<<<<< HEAD
+=======
+
+
+
+>>>>>>> 0adeb3173577bde7976ddf22ea3691ce9f7db98c
 	glBindTexture(GL_TEXTURE_2D, tex_ground.texture[0]);	// Bind the ground texture
 	glColor3f(1, 1, 1);	// Dim the ground texture a bit
 
@@ -311,6 +317,34 @@ void RenderGround()
 	glEnable(GL_LIGHTING);	// Enable lighting again for other entites coming throung the pipeline.
 
 	glColor3f(1, 1, 1);	// Set material back to white instead of grey used for the ground texture.
+}
+
+void RenderGround2() {
+	glDisable(GL_LIGHTING);    // Disable lighting 
+
+	glColor3f(1.0, 1.0, 1.0);    // Set color to white
+
+	glEnable(GL_TEXTURE_2D);    // Enable 2D texturing
+
+	glBindTexture(GL_TEXTURE_2D, tex_ground.texture[0]);    // Bind the ground texture
+
+	glPushMatrix();
+	glBegin(GL_QUADS);
+	glNormal3f(0, 1, 0);    // Set quad normal direction.
+	glTexCoord2f(0, 0);
+	glVertex3f(-15, 0, -15);
+	glTexCoord2f(4, 0);
+	glVertex3f(-15, 0, 15);
+	glTexCoord2f(4, 4);
+	glVertex3f(15, 0, 15);
+	glTexCoord2f(0, 4);
+	glVertex3f(15, 0, -15);
+	glEnd();
+	glPopMatrix();
+
+	glEnable(GL_LIGHTING);    // Enable lighting again for other entities coming through the pipeline.
+
+	glColor3f(1, 1, 1);    // Set material back to white instead of grey used for the ground texture.
 }
 
 void RenderCeiling() {
@@ -410,6 +444,7 @@ void RenderPlayer() {
 
 void drawSpike() {
 
+<<<<<<< HEAD
 	glDisable(GL_LIGHTING);	// Disable lighting 
 	glBindTexture(GL_TEXTURE_2D, tex_spikecube.texture[0]);	// Bind the ground texture
 	glColor3f(1, 1, 1);	// Dim the ground texture a bit
@@ -427,6 +462,14 @@ void drawSpike() {
 	glTexCoord2f(0, reps);
 	glVertex3f(15, spikeHeight, -9);
 	glEnd();
+=======
+	glColor3f(1, 0, 0);
+	glPushMatrix();
+	glTranslatef(0, spikeHeight, -4.5);
+	glScalef(15, scene1Height, 10);
+	glTranslatef(0, 0.5, 0);
+	glutSolidCube(1);
+>>>>>>> 0adeb3173577bde7976ddf22ea3691ce9f7db98c
 	glPopMatrix();
 
 	glBindTexture(GL_TEXTURE_2D, tex_spikecube.texture[0]);	// Bind the ground texture
@@ -447,8 +490,14 @@ void drawSpike() {
 
 	glColor3f(1, 1, 1);
 	glPushMatrix();
+<<<<<<< HEAD
 	glTranslatef(0, spikeHeight,0);
 	glRotatef(180, 0, 0, 1);
+=======
+	glTranslatef(0, spikeHeight - 2.5, 0);
+	glRotatef(90, 0, 0, 1);
+	glScalef(0.4, 0.4, 0.4);
+>>>>>>> 0adeb3173577bde7976ddf22ea3691ce9f7db98c
 	model_spike.Draw();
 	//glutSolidCone(1, 2, 40, 40);
 	glPopMatrix();
@@ -460,7 +509,7 @@ void RenderSpike() {
 	for (int i = 0; i < 5; i++) {
 		for (int j = 0; j < 15; j++) {
 			glPushMatrix();
-			glTranslatef(j*2-14,0,i*2-14);
+			glTranslatef(j * 2 - 14, 0, i * 2 - 14);
 			drawSpike();
 			glPopMatrix();
 		}
@@ -592,6 +641,7 @@ void RenderWall() {
 	glColor3f(1, 1, 1);	// Set material back to white instead of grey used for the ground texture.
 }
 
+<<<<<<< HEAD
 void RenderCube() {
 	if (isCubeGrabbed) {
 		float cubeOffsetX = 3.0f * xangle;
@@ -607,6 +657,60 @@ void RenderCube() {
 			cube.y = 0;
 		}
 	}
+=======
+void drawWireCuboid(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Set to draw wireframe
+
+	glColor3f(0.0, 0.0, 1.0); // Set color to white
+
+	glBegin(GL_QUADS);
+
+	// Bottom face
+	glVertex3f(minX, minY, minZ);
+	glVertex3f(maxX, minY, minZ);
+	glVertex3f(maxX, minY, maxZ);
+	glVertex3f(minX, minY, maxZ);
+
+	// Top face
+	glVertex3f(minX, maxY, minZ);
+	glVertex3f(maxX, maxY, minZ);
+	glVertex3f(maxX, maxY, maxZ);
+	glVertex3f(minX, maxY, maxZ);
+
+	// Front face
+	glVertex3f(minX, minY, minZ);
+	glVertex3f(maxX, minY, minZ);
+	glVertex3f(maxX, maxY, minZ);
+	glVertex3f(minX, maxY, minZ);
+
+	// Back face
+	glVertex3f(minX, minY, maxZ);
+	glVertex3f(maxX, minY, maxZ);
+	glVertex3f(maxX, maxY, maxZ);
+	glVertex3f(minX, maxY, maxZ);
+
+	// Left face
+	glVertex3f(minX, minY, minZ);
+	glVertex3f(minX, minY, maxZ);
+	glVertex3f(minX, maxY, maxZ);
+	glVertex3f(minX, maxY, minZ);
+
+	// Right face
+	glVertex3f(maxX, minY, minZ);
+	glVertex3f(maxX, minY, maxZ);
+	glVertex3f(maxX, maxY, maxZ);
+	glVertex3f(maxX, maxY, minZ);
+
+	glEnd();
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Set back to fill mode
+}
+
+void setupCamera() {
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(60, 640 / 480, 0.001, 100);
+>>>>>>> 0adeb3173577bde7976ddf22ea3691ce9f7db98c
 
 	glColor3f(0.48, 0.48, 0.48);
 	glPushMatrix();
@@ -896,6 +1000,7 @@ void myDisplay(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//setupCamera();
+	InitLightSource();
 	glLoadIdentity();
 
 
@@ -904,9 +1009,15 @@ void myDisplay(void)
 		drawCrosshair(playerX + xangle, playerEyeY - yangle, playerZ + zangle, 0.005);
 	}
 	else {
+<<<<<<< HEAD
 		float cameraOffsetX = -6.0f * xangle;
 		float cameraOffsetY = yangle;
 		float cameraOffsetZ = -6.0f * zangle;
+=======
+		float cameraOffsetX = -3.0f * xangle;
+		float cameraOffsetY = 4.0f + yangle;
+		float cameraOffsetZ = -3.0f * zangle;
+>>>>>>> 0adeb3173577bde7976ddf22ea3691ce9f7db98c
 
 		float cameraX = playerX + cameraOffsetX;
 		float cameraY = playerEyeY + cameraOffsetY;
@@ -930,6 +1041,7 @@ void myDisplay(void)
 	drawPortal2(portal2Coords.x, portal2Coords.y, portal2Coords.z);
 
 
+<<<<<<< HEAD
 	GLfloat lightIntensity[] = { 0.7, 0.7, 0.7, 1.0f };
 	GLfloat lightPosition[] = { 0.0f, 100.0f, 0.0f, 0.0f };
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
@@ -939,15 +1051,16 @@ void myDisplay(void)
 	glPushMatrix();
 	glScalef(3, 3, 3);
 	glPopMatrix();
+=======
+>>>>>>> 0adeb3173577bde7976ddf22ea3691ce9f7db98c
 	// Draw Ground
-	RenderGround();
+	RenderGround2();
 
 	RenderWall();
 
 	RenderCeiling();
 
 	RenderSpike();
-
 
 	// Draw Tree Model
 	//glPushMatrix();
@@ -983,9 +1096,85 @@ void myDisplay(void)
 	gluSphere(qobj, 100, 100, 100);
 	gluDeleteQuadric(qobj);
 
+	glPopMatrix();
+	glutSwapBuffers();
+}
 
+void myDisplay2(void)
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//setupCamera();
+	InitLightSource();
+	glLoadIdentity();
+
+	if (isFPV) {
+		gluLookAt(playerX, playerY, playerZ, playerX + xangle, playerY - yangle, playerZ + zangle, 0.0f, playerY, 0.0f);
+	}
+	else {
+		float cameraOffsetX = -3.0f * xangle;
+		float cameraOffsetY = 4.0f + yangle;
+		float cameraOffsetZ = -3.0f * zangle;
+
+		float cameraX = playerX + cameraOffsetX;
+		float cameraY = playerY + cameraOffsetY;
+		float cameraZ = playerZ + cameraOffsetZ;
+		gluLookAt(cameraX, cameraY, cameraZ, playerX, playerY + 4, playerZ, 0.0f, playerY, 0.0f);
+		RenderPlayer();
+	}
+
+
+	// Draw Ground
+	RenderGround2();
+
+	RenderWall();
+
+	RenderCeiling();
+
+	glPushMatrix();
+	glTranslatef(9.0, 0.0, 9.0);  // Adjust the translation based on your model size and desired position
+	model_button.Draw();
 	glPopMatrix();
 
+<<<<<<< HEAD
+=======
+	drawWireCuboid(-14.0, 0.0, -14.0, -4.0, scene1Height/1.5, -4.0);
+
+	// Draw Tree Model
+	//glPushMatrix();
+	//glTranslatef(0, 0, 0);
+	//glScalef(0.1, 0.1, 0.1);
+	//model_tree.Draw();
+	//glPopMatrix();
+
+	// Draw house Model
+	//glPushMatrix();
+	//model_house.rot.x = 90.f;
+	//model_house.Draw();
+	//glPopMatrix();
+
+	// Draw Wall Model
+	//glPushMatrix();
+	//glTranslatef(10,0,10);
+	//glRotatef(90.f, 1, 0, 0);
+	//model_wall.Draw();
+	//glPopMatrix();
+	//model_player.Draw();
+
+	//sky box
+	glPushMatrix();
+
+	GLUquadricObj* qobj;
+	qobj = gluNewQuadric();
+	glTranslated(50, 0, 0);
+	glRotated(90, 1, 0, 1);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	gluQuadricTexture(qobj, true);
+	gluQuadricNormals(qobj, GL_SMOOTH);
+	gluSphere(qobj, 100, 100, 100);
+	gluDeleteQuadric(qobj);
+
+	glPopMatrix();
+>>>>>>> 0adeb3173577bde7976ddf22ea3691ce9f7db98c
 	glutSwapBuffers();
 }
 
@@ -1045,6 +1234,7 @@ void myReshape(int w, int h)
 void LoadAssets()
 {
 	// Loading Model files
+<<<<<<< HEAD
 	model_house.Load("Models/test/ff5b2a837ba24c69a890e7103150cb04.3ds");
 	model_cube.Load("Models/cube/cube.3ds");
 	model_spike.Load("Models/spike/spike.3ds");
@@ -1052,6 +1242,13 @@ void LoadAssets()
 	model_player.Load("Models/player/payer.3ds");
 	model_crate.Load("Models/crate/crate.3ds");
 	model_ring.Load("Models/ring/ring.3ds");
+=======
+	model_house.Load("Models/house/house.3DS");
+	//model_tree.Load("Models/mytree/tree1.3ds");
+	model_spike.Load("Models/mace/MACE.3ds");
+	model_player.Load("Models/player/robot.3ds");
+	model_button.Load("Models/button/button.3ds");
+>>>>>>> 0adeb3173577bde7976ddf22ea3691ce9f7db98c
 
 	// Loading texture files
 	tex_ground.Load("Textures/ground.bmp");
@@ -1095,6 +1292,7 @@ void Special(int key, int x, int y) {
 	glutPostRedisplay();
 }
 
+<<<<<<< HEAD
 bool groundCollided(float x,  float y, float z) {
 	if (z >= -5 && z <= 5) {
 		if (y >= -5) {
@@ -1155,6 +1353,8 @@ void handleTeleports() {
 	}
 
 }
+=======
+>>>>>>> 0adeb3173577bde7976ddf22ea3691ce9f7db98c
 
 void movementTimer(int value) {
 	handleTeleports();
@@ -1180,6 +1380,7 @@ void movementTimer(int value) {
 		newZ -= xangle * speed;
 	}
 
+<<<<<<< HEAD
 	if (newX > wallHalfLength - 0.2) {
 		newX = wallHalfLength - 0.2;
 	}
@@ -1192,6 +1393,20 @@ void movementTimer(int value) {
 	}
 	else if (newZ < -wallHalfWidth + 0.2) {
 		newZ = -wallHalfWidth + 0.2;
+=======
+	if (newX >= wallHalfLength - 3.0) {
+		newX = wallHalfLength - 3.0;
+	}
+	else if (newX <= -wallHalfLength + 3.0) {
+		newX = -wallHalfWidth + 3.0;
+	}
+
+	if (newZ >= wallHalfWidth - 3.0) {
+		newZ = wallHalfWidth - 3.0;
+	}
+	else if (newZ <= -wallHalfWidth + 3.0) {
+		newZ = -wallHalfWidth + 3.0;
+>>>>>>> 0adeb3173577bde7976ddf22ea3691ce9f7db98c
 	}
 
 	if (!groundCollided(newX, playerY, newZ)) {
@@ -1275,7 +1490,7 @@ void main(int argc, char** argv)
 
 	glutCreateWindow(title);
 
-	glutDisplayFunc(myDisplay);
+	glutDisplayFunc(myDisplay2);
 
 	glutReshapeFunc(resize);
 	glutMouseFunc(mouseClicks);
