@@ -30,9 +30,6 @@ GLdouble zFar = 100;
 int scene1Height = 25;
 float spikeHeight = 24.9;
 bool spikeForward = true;
-float lightSourceX = 0.0f;
-float lightSourceY = scene1Height;
-float lightSourceZ = 0.0f;
 
 class Vector3f {
 public:
@@ -134,6 +131,7 @@ float sensitivity = 0.005f;
 Model_3DS model_house;
 Model_3DS model_spike;
 Model_3DS model_player;
+Model_3DS model_button;
 
 // Textures
 GLTexture tex_ground;
@@ -152,46 +150,23 @@ bool keystates[256];
 //=======================================================================
 void InitLightSource()
 {
-	// Enable Lighting for this OpenGL Program
 	glEnable(GL_LIGHTING);
-
-	// Enable Light Source number 0
-	// OpengL has 8 light sources
 	glEnable(GL_LIGHT0);
 
-	// Define Light source 0 ambient light
-	GLfloat ambient[] = { 0.1f, 0.1f, 0.1, 1.0f };
-	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+	GLfloat ambient[] = { 0.7f, 0.7f, 0.7, 1.0f };
+	GLfloat diffuse[] = { 0.6f, 0.6f, 0.6, 1.0f };
+	GLfloat specular[] = { 1.0f, 1.0f, 1.0, 1.0f };
+	GLfloat shininess[] = { 50 };
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
 
-	// Define Light source 0 diffuse light
-	GLfloat diffuse[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
+	GLfloat lightIntensity[] = { 0.7f, 0.7f, 1, 1.0f };
+	GLfloat lightPosition[] = { 0.0f, 0.0, 0.0f, 1.0f };
+	glLightfv(GL_LIGHT0, GL_POSITION, lightIntensity);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightIntensity);
 
-	// Define Light source 0 Specular light
-	GLfloat specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
-
-	// Finally, define light source 0 position in World Space
-	GLfloat light_position[] = { 0.0f, 10.0f, 0.0f, 1.0f };
-	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-
-	glEnable(GL_LIGHT1);
-
-	// Define Light source 1 ambient light
-	GLfloat ambient1[] = { 0.1f, 0.1f, 0.1, 1.0f };
-	glLightfv(GL_LIGHT1, GL_AMBIENT, ambient1);
-
-	// Define Light source 1 diffuse light
-	GLfloat diffuse1[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse1);
-
-	// Define Light source 1 Specular light
-	GLfloat specular1[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	glLightfv(GL_LIGHT1, GL_SPECULAR, specular1);
-
-	// Set the initial position of the moving light source
-	GLfloat lightSourcePosition[] = { lightSourceX, lightSourceY, lightSourceZ, 1.0f };
-	glLightfv(GL_LIGHT1, GL_POSITION, lightSourcePosition);
 }
 
 //=======================================================================
@@ -199,6 +174,7 @@ void InitLightSource()
 //======================================================================
 void InitMaterial()
 {
+
 	// Enable Material Tracking
 	glEnable(GL_COLOR_MATERIAL);
 
@@ -220,6 +196,8 @@ void InitMaterial()
 //=======================================================================
 void myInit(void)
 {
+	glEnable(GL_LIGHTING);
+
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 
 	glMatrixMode(GL_PROJECTION);
@@ -243,8 +221,6 @@ void myInit(void)
 	// AT (ax, ay, az):	 denotes the direction where the camera is aiming at.					 //
 	// UP (ux, uy, uz):  denotes the upward orientation of the camera.							 //
 	//*******************************************************************************************//
-
-	InitLightSource();
 
 	InitMaterial();
 
@@ -282,7 +258,7 @@ void RenderGround()
 	glPopMatrix();
 
 
-	
+
 
 
 	glBindTexture(GL_TEXTURE_2D, tex_ground.texture[0]);	// Bind the ground texture
@@ -319,6 +295,34 @@ void RenderGround()
 	glEnable(GL_LIGHTING);	// Enable lighting again for other entites coming throung the pipeline.
 
 	glColor3f(1, 1, 1);	// Set material back to white instead of grey used for the ground texture.
+}
+
+void RenderGround2() {
+	glDisable(GL_LIGHTING);    // Disable lighting 
+
+	glColor3f(1.0, 1.0, 1.0);    // Set color to white
+
+	glEnable(GL_TEXTURE_2D);    // Enable 2D texturing
+
+	glBindTexture(GL_TEXTURE_2D, tex_ground.texture[0]);    // Bind the ground texture
+
+	glPushMatrix();
+	glBegin(GL_QUADS);
+	glNormal3f(0, 1, 0);    // Set quad normal direction.
+	glTexCoord2f(0, 0);
+	glVertex3f(-15, 0, -15);
+	glTexCoord2f(4, 0);
+	glVertex3f(-15, 0, 15);
+	glTexCoord2f(4, 4);
+	glVertex3f(15, 0, 15);
+	glTexCoord2f(0, 4);
+	glVertex3f(15, 0, -15);
+	glEnd();
+	glPopMatrix();
+
+	glEnable(GL_LIGHTING);    // Enable lighting again for other entities coming through the pipeline.
+
+	glColor3f(1, 1, 1);    // Set material back to white instead of grey used for the ground texture.
 }
 
 void RenderCeiling() {
@@ -364,17 +368,17 @@ void RenderPlayer() {
 
 void drawSpike() {
 
-	glColor3f(1,0 , 0);
+	glColor3f(1, 0, 0);
 	glPushMatrix();
-	glTranslatef(0, spikeHeight,-4.5);
-	glScalef(15,scene1Height,10);
+	glTranslatef(0, spikeHeight, -4.5);
+	glScalef(15, scene1Height, 10);
 	glTranslatef(0, 0.5, 0);
 	glutSolidCube(1);
 	glPopMatrix();
 
 	glColor3f(1, 1, 1);
 	glPushMatrix();
-	glTranslatef(0, spikeHeight-2.5,0);
+	glTranslatef(0, spikeHeight - 2.5, 0);
 	glRotatef(90, 0, 0, 1);
 	glScalef(0.4, 0.4, 0.4);
 	model_spike.Draw();
@@ -387,7 +391,7 @@ void RenderSpike() {
 	for (int i = 0; i < 5; i++) {
 		for (int j = 0; j < 15; j++) {
 			glPushMatrix();
-			glTranslatef(j*2-14,0,i*2-14);
+			glTranslatef(j * 2 - 14, 0, i * 2 - 14);
 			drawSpike();
 			glPopMatrix();
 		}
@@ -519,6 +523,54 @@ void RenderWall() {
 	glColor3f(1, 1, 1);	// Set material back to white instead of grey used for the ground texture.
 }
 
+void drawWireCuboid(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Set to draw wireframe
+
+	glColor3f(0.0, 0.0, 1.0); // Set color to white
+
+	glBegin(GL_QUADS);
+
+	// Bottom face
+	glVertex3f(minX, minY, minZ);
+	glVertex3f(maxX, minY, minZ);
+	glVertex3f(maxX, minY, maxZ);
+	glVertex3f(minX, minY, maxZ);
+
+	// Top face
+	glVertex3f(minX, maxY, minZ);
+	glVertex3f(maxX, maxY, minZ);
+	glVertex3f(maxX, maxY, maxZ);
+	glVertex3f(minX, maxY, maxZ);
+
+	// Front face
+	glVertex3f(minX, minY, minZ);
+	glVertex3f(maxX, minY, minZ);
+	glVertex3f(maxX, maxY, minZ);
+	glVertex3f(minX, maxY, minZ);
+
+	// Back face
+	glVertex3f(minX, minY, maxZ);
+	glVertex3f(maxX, minY, maxZ);
+	glVertex3f(maxX, maxY, maxZ);
+	glVertex3f(minX, maxY, maxZ);
+
+	// Left face
+	glVertex3f(minX, minY, minZ);
+	glVertex3f(minX, minY, maxZ);
+	glVertex3f(minX, maxY, maxZ);
+	glVertex3f(minX, maxY, minZ);
+
+	// Right face
+	glVertex3f(maxX, minY, minZ);
+	glVertex3f(maxX, minY, maxZ);
+	glVertex3f(maxX, maxY, maxZ);
+	glVertex3f(maxX, maxY, minZ);
+
+	glEnd();
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Set back to fill mode
+}
+
 void setupCamera() {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -536,13 +588,14 @@ void myDisplay(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//setupCamera();
+	InitLightSource();
 	glLoadIdentity();
 
 	if (isFPV) {
 		gluLookAt(playerX, playerY, playerZ, playerX + xangle, playerY - yangle, playerZ + zangle, 0.0f, playerY, 0.0f);
 	}
 	else {
-		float cameraOffsetX = -3.0f * xangle; 
+		float cameraOffsetX = -3.0f * xangle;
 		float cameraOffsetY = 4.0f + yangle;
 		float cameraOffsetZ = -3.0f * zangle;
 
@@ -554,23 +607,14 @@ void myDisplay(void)
 	}
 
 
-	GLfloat lightIntensity[] = { 0.7, 0.7, 0.7, 1.0f };
-	GLfloat lightPosition[] = { 0.0f, 100.0f, 0.0f, 0.0f };
-	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, lightIntensity);
-
-	GLfloat lightSourcePosition[] = { lightSourceX, lightSourceY, lightSourceZ, 1.0f };
-	glLightfv(GL_LIGHT1, GL_POSITION, lightSourcePosition);
-
 	// Draw Ground
-	RenderGround();
+	RenderGround2();
 
 	RenderWall();
 
 	RenderCeiling();
 
 	RenderSpike();
-
 
 	// Draw Tree Model
 	//glPushMatrix();
@@ -606,11 +650,82 @@ void myDisplay(void)
 	gluSphere(qobj, 100, 100, 100);
 	gluDeleteQuadric(qobj);
 
+	glPopMatrix();
+	glutSwapBuffers();
+}
 
+void myDisplay2(void)
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//setupCamera();
+	InitLightSource();
+	glLoadIdentity();
+
+	if (isFPV) {
+		gluLookAt(playerX, playerY, playerZ, playerX + xangle, playerY - yangle, playerZ + zangle, 0.0f, playerY, 0.0f);
+	}
+	else {
+		float cameraOffsetX = -3.0f * xangle;
+		float cameraOffsetY = 4.0f + yangle;
+		float cameraOffsetZ = -3.0f * zangle;
+
+		float cameraX = playerX + cameraOffsetX;
+		float cameraY = playerY + cameraOffsetY;
+		float cameraZ = playerZ + cameraOffsetZ;
+		gluLookAt(cameraX, cameraY, cameraZ, playerX, playerY + 4, playerZ, 0.0f, playerY, 0.0f);
+		RenderPlayer();
+	}
+
+
+	// Draw Ground
+	RenderGround2();
+
+	RenderWall();
+
+	RenderCeiling();
+
+	glPushMatrix();
+	glTranslatef(9.0, 0.0, 9.0);  // Adjust the translation based on your model size and desired position
+	model_button.Draw();
 	glPopMatrix();
 
+	drawWireCuboid(-14.0, 0.0, -14.0, -4.0, scene1Height/1.5, -4.0);
 
+	// Draw Tree Model
+	//glPushMatrix();
+	//glTranslatef(0, 0, 0);
+	//glScalef(0.1, 0.1, 0.1);
+	//model_tree.Draw();
+	//glPopMatrix();
 
+	// Draw house Model
+	//glPushMatrix();
+	//model_house.rot.x = 90.f;
+	//model_house.Draw();
+	//glPopMatrix();
+
+	// Draw Wall Model
+	//glPushMatrix();
+	//glTranslatef(10,0,10);
+	//glRotatef(90.f, 1, 0, 0);
+	//model_wall.Draw();
+	//glPopMatrix();
+	//model_player.Draw();
+
+	//sky box
+	glPushMatrix();
+
+	GLUquadricObj* qobj;
+	qobj = gluNewQuadric();
+	glTranslated(50, 0, 0);
+	glRotated(90, 1, 0, 1);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	gluQuadricTexture(qobj, true);
+	gluQuadricNormals(qobj, GL_SMOOTH);
+	gluSphere(qobj, 100, 100, 100);
+	gluDeleteQuadric(qobj);
+
+	glPopMatrix();
 	glutSwapBuffers();
 }
 
@@ -714,6 +829,7 @@ void LoadAssets()
 	//model_tree.Load("Models/mytree/tree1.3ds");
 	model_spike.Load("Models/mace/MACE.3ds");
 	model_player.Load("Models/player/robot.3ds");
+	model_button.Load("Models/button/button.3ds");
 
 	// Loading texture files
 	tex_ground.Load("Textures/ground.bmp");
@@ -754,9 +870,6 @@ void Special(int key, int x, int y) {
 	glutPostRedisplay();
 }
 
-bool wallCollided(float x, float y) {
-	return (x >= wallHalfLength-0.2 || x <= -wallHalfLength + 0.2 || y >= wallHalfWidth - 0.2 || y <= -wallHalfWidth +0.2);
-}
 
 void movementTimer(int value) {
 	float speed = 0.1;
@@ -780,18 +893,18 @@ void movementTimer(int value) {
 		newZ -= xangle * speed;
 	}
 
-	if (newX >= wallHalfLength - 0.2) {
-		newX = wallHalfLength - 0.2;
+	if (newX >= wallHalfLength - 3.0) {
+		newX = wallHalfLength - 3.0;
 	}
-	else if (newX <= -wallHalfLength + 0.2) {
-		newX = -wallHalfWidth + 0.2;
+	else if (newX <= -wallHalfLength + 3.0) {
+		newX = -wallHalfWidth + 3.0;
 	}
 
-	if (newZ >= wallHalfWidth - 0.2) {
-		newZ = wallHalfWidth - 0.2;
+	if (newZ >= wallHalfWidth - 3.0) {
+		newZ = wallHalfWidth - 3.0;
 	}
-	else if (newZ <= -wallHalfWidth + 0.2) {
-		newZ = -wallHalfWidth + 0.2;
+	else if (newZ <= -wallHalfWidth + 3.0) {
+		newZ = -wallHalfWidth + 3.0;
 	}
 
 	playerX = newX;
@@ -866,7 +979,7 @@ void main(int argc, char** argv)
 
 	glutCreateWindow(title);
 
-	glutDisplayFunc(myDisplay);
+	glutDisplayFunc(myDisplay2);
 
 	glutReshapeFunc(resize);
 	glutKeyboardFunc(KeyboardDown);
