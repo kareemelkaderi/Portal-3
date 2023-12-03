@@ -136,6 +136,7 @@ float xangle = 0.0f, yangle = 1.0f, zangle = -1.0f; // Camera angles
 float x_pos = 0.0f, y_pos = 0.0f; // Camera yaw
 float sensitivity = 0.005f;
 
+int sceneNumber = 2;
 
 // Model Variables
 Model_3DS model_house;
@@ -890,6 +891,7 @@ void setPortal2() {
 		//play error sound
 	}
 }
+
 void drawWireCuboid(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Set to draw wireframe
 
@@ -942,6 +944,7 @@ void setupCamera() {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(60, 640 / 480, 0.001, 100);
+}
 
 void grabCube() {
 	if (isCubeGrabbed) {
@@ -969,8 +972,7 @@ void drawCrosshair(float x, float y, float z, float r) {
 //=======================================================================
 // Display Function
 //=======================================================================
-void myDisplay(void)
-{
+void myDisplay(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//setupCamera();
 	InitLightSource();
@@ -995,7 +997,7 @@ void myDisplay(void)
 	}
 
 	glEnable(GL_LIGHTING);
-	
+
 	RenderRings();
 
 	RenderCrates();
@@ -1018,34 +1020,13 @@ void myDisplay(void)
 	glScalef(3, 3, 3);
 	glPopMatrix();
 	// Draw Ground
-	RenderGround2();
+	RenderGround();
 
 	RenderWall();
 
 	RenderCeiling();
 
 	RenderSpike();
-
-	// Draw Tree Model
-	//glPushMatrix();
-	//glTranslatef(0, 0, 0);
-	//glScalef(0.1, 0.1, 0.1);
-	//model_tree.Draw();
-	//glPopMatrix();
-
-	// Draw house Model
-	//glPushMatrix();
-	//model_house.rot.x = 90.f;
-	//model_house.Draw();
-	//glPopMatrix();
-
-	// Draw Wall Model
-	//glPushMatrix();
-	//glTranslatef(10,0,10);
-	//glRotatef(90.f, 1, 0, 0);
-	//model_wall.Draw();
-	//glPopMatrix();
-	//model_player.Draw();
 
 	//sky box
 	glPushMatrix();
@@ -1071,21 +1052,25 @@ void myDisplay2(void)
 	InitLightSource();
 	glLoadIdentity();
 
+
 	if (isFPV) {
-		gluLookAt(playerX, playerY, playerZ, playerX + xangle, playerY - yangle, playerZ + zangle, 0.0f, playerY, 0.0f);
+		gluLookAt(playerX, playerEyeY, playerZ, playerX + xangle, playerEyeY - yangle, playerZ + zangle, 0.0f, abs(playerEyeY), 0.0f);
+		drawCrosshair(playerX + xangle, playerEyeY - yangle, playerZ + zangle, 0.005);
 	}
 	else {
-		float cameraOffsetX = -3.0f * xangle;
-		float cameraOffsetY = 4.0f + yangle;
-		float cameraOffsetZ = -3.0f * zangle;
+		float cameraOffsetX = -6.0f * xangle;
+		float cameraOffsetY = yangle;
+		float cameraOffsetZ = -6.0f * zangle;
 
 		float cameraX = playerX + cameraOffsetX;
-		float cameraY = playerY + cameraOffsetY;
+		float cameraY = playerEyeY + cameraOffsetY;
 		float cameraZ = playerZ + cameraOffsetZ;
-		gluLookAt(cameraX, cameraY, cameraZ, playerX, playerY + 4, playerZ, 0.0f, playerY, 0.0f);
+		gluLookAt(cameraX, cameraY, cameraZ, playerX, playerEyeY + 0.4, playerZ, 0.0f, abs(playerEyeY), 0.0f);
+		drawCrosshair(playerX, playerEyeY + 0.4, playerZ, 0.01);
 		RenderPlayer();
 	}
 
+	RenderGun();
 
 	// Draw Ground
 	RenderGround2();
@@ -1093,6 +1078,9 @@ void myDisplay2(void)
 	RenderWall();
 
 	RenderCeiling();
+
+	drawPortal1(portal1Coords.x, portal1Coords.y, portal1Coords.z);
+	drawPortal2(portal2Coords.x, portal2Coords.y, portal2Coords.z);
 
 	glPushMatrix();
 	glTranslatef(9.0, 0.0, 9.0);  // Adjust the translation based on your model size and desired position
@@ -1247,7 +1235,7 @@ void Special(int key, int x, int y) {
 }
 
 bool groundCollided(float x,  float y, float z) {
-	if (z >= -5 && z <= 5) {
+	if (sceneNumber == 1 && z >= -5 && z <= 5) {
 		if (y >= -5) {
 			return false;
 		}
@@ -1307,7 +1295,7 @@ void handleTeleports() {
 
 }
 
-void movementTimer(int value) {
+void movementTimerScene1(int value) {
 	handleTeleports();
 
 	float speed = 0.1;
@@ -1354,9 +1342,59 @@ void movementTimer(int value) {
 	playerZ = newZ;
 
 	glutPostRedisplay();
-	glutTimerFunc(16, movementTimer, 0);
+	glutTimerFunc(16, movementTimerScene1, 0);
 }
 
+void movementTimerScene2(int value) {
+	handleTeleports();
+
+	float speed = 0.1;
+	float newX = playerX;
+	float newZ = playerZ;
+
+	if (keystates['w']) { // Forward
+		newX += xangle * speed;
+		newZ += zangle * speed;
+	}
+	if (keystates['s']) { // Backward
+		newX -= xangle * speed;
+		newZ -= zangle * speed;
+	}
+	if (keystates['d']) { // Right
+		newX -= zangle * speed;
+		newZ += xangle * speed;
+	}
+	if (keystates['a']) { // Left
+		newX += zangle * speed;
+		newZ -= xangle * speed;
+	}
+
+	if (newX > wallHalfLength - 0.2) {
+		newX = wallHalfLength - 0.2;
+	}
+	else if (newX < -wallHalfLength + 0.2) {
+		newX = -wallHalfWidth + 0.2;
+	}
+
+	if (newZ > wallHalfWidth - 0.2) {
+		newZ = wallHalfWidth - 0.2;
+	}
+	else if (newZ < -wallHalfWidth + 0.2) {
+		newZ = -wallHalfWidth + 0.2;
+	}
+
+	if (!groundCollided(newX, playerY, newZ)) {
+		playerEyeY -= speed * 2;
+		playerY -= speed * 2;
+	}
+
+	playerX = newX;
+	playerZ = newZ;
+
+	glutPostRedisplay();
+	glutTimerFunc(16, movementTimerScene2, 0);
+
+}
 void spikeTimer(int value) {
 	if (spikeHeight <= 4) {
 		spikeForward = false;
@@ -1426,7 +1464,6 @@ void main(int argc, char** argv)
 
 	glutCreateWindow(title);
 
-	glutDisplayFunc(myDisplay2);
 
 	glutReshapeFunc(resize);
 	glutMouseFunc(mouseClicks);
@@ -1435,8 +1472,16 @@ void main(int argc, char** argv)
 	glutSetCursor(GLUT_CURSOR_NONE);
 	glutSpecialFunc(Special);
 
-	glutTimerFunc(0, movementTimer, 0);
-	glutTimerFunc(0, spikeTimer, 0);
+	if (sceneNumber == 1) {
+		glutDisplayFunc(myDisplay);
+		glutTimerFunc(0, movementTimerScene1, 0);
+		glutTimerFunc(0, spikeTimer, 0);
+	}
+	else if (sceneNumber == 2) {
+	glutDisplayFunc(myDisplay2);
+		glutTimerFunc(0, movementTimerScene2, 0);
+	}
+
 	glutPassiveMotionFunc(Mouse);
 
 	LoadAssets();
