@@ -22,6 +22,11 @@ char title[] = "3D Model Loader Sample";
 
 float wallHalfLength = 15.0;
 float wallHalfWidth = 15.0;
+int score = 0;
+int timer = 0;
+bool diamondCollide = false;
+float cubePositionX = 0.0f;
+int translationDirection = 1;
 
 // 3D Projection Options
 GLdouble fovy = 70.0;
@@ -147,6 +152,7 @@ Model_3DS model_player;
 Model_3DS model_crate;
 Model_3DS model_ring;
 Model_3DS model_button;
+Model_3DS model_diamond;
 
 // Textures
 GLTexture tex_ground;
@@ -156,6 +162,7 @@ GLTexture tex_ceiling;
 GLTexture tex_spikecube;
 GLTexture tex_portal1;
 GLTexture tex_portal2;
+GLTexture tex_frame;
 
 float playerX = 0;
 float playerY = 0;
@@ -170,19 +177,12 @@ void InitLightSource()
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 
-	GLfloat ambient[] = { 0.7f, 0.7f, 0.7, 1.0f };
-	GLfloat diffuse[] = { 0.6f, 0.6f, 0.6, 1.0f };
-	GLfloat specular[] = { 1.0f, 1.0f, 1.0, 1.0f };
-	GLfloat shininess[] = { 50 };
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
+	// Set light properties
+	GLfloat lightPosition[] = { 0.0f, scene1Height - 0.5f, 0.0f, 1.0f };
+	GLfloat lightDiffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-	GLfloat lightIntensity[] = { 0.7f, 0.7f, 1, 1.0f };
-	GLfloat lightPosition[] = { 0.0f, 0.0, 0.0f, 1.0f };
-	glLightfv(GL_LIGHT0, GL_POSITION, lightIntensity);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightIntensity);
+	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
 
 }
 
@@ -421,6 +421,45 @@ void RenderRings() {
 	ringAnim += 2;
 }
 
+float diamondScale = 0.7;
+float scaleIncrement = 0.01; 
+float minScale = 0.7;
+float maxScale = 1.0;
+bool growing = true;  
+
+void RenderDiamond() {
+	glPushMatrix();
+
+	glTranslatef(-10, 0.5, -10);
+	glRotatef(ringAnim, 0, 0.5, 0);
+
+	if (growing) {
+		diamondScale += scaleIncrement;
+	}
+	else {
+		diamondScale -= scaleIncrement;
+		
+	}
+
+	if (diamondScale >= maxScale || diamondScale <= minScale) {
+		growing = !growing;
+	}
+
+	glScalef(diamondScale, diamondScale, diamondScale);
+
+	model_diamond.Draw();
+
+	glPopMatrix();
+
+	ringAnim += 2;
+}
+
+void diamondCollision() {
+	if (playerX > -11.0 && playerX<-9.3 && playerZ>-11.0 && playerZ < -9.3) {
+		diamondCollide = true;
+	}
+}
+
 void RenderPlayer() {
 	float dx = playerX - (playerX - xangle);
 	float dz = playerZ - (playerZ - zangle);
@@ -433,6 +472,27 @@ void RenderPlayer() {
 	model_player.Draw();
 	glPopMatrix();
 }
+
+void RenderCubeLight() {
+	// Set the cube color and material properties
+	GLfloat lightColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, lightColor);
+
+	float cubePosition[] = { cubePositionX, scene1Height - 0.5f, 0.0f };
+
+	cubePositionX += 0.05f * translationDirection;  // Adjust the translation speed as needed
+
+	if (cubePositionX > 15 || cubePositionX < -15) {
+		translationDirection *= -1;  // Reverse the direction
+	}
+		// Draw the cube
+		glPushMatrix();
+		glTranslatef(cubePosition[0], cubePosition[1], cubePosition[2]);
+		glutSolidCube(1.0f);
+		glPopMatrix();
+	
+}
+
 
 void drawSpike() {
 
@@ -892,10 +952,16 @@ void setPortal2() {
 	}
 }
 
-void drawWireCuboid(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
+void drawWireCuboid(float minX, float minY, float minZ, float maxX, float maxY, float maxZ,float lineWidth) {
+	glEnable(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, tex_frame.texture[0]);
+
+	glLineWidth(lineWidth);
+
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Set to draw wireframe
 
-	glColor3f(0.0, 0.0, 1.0); // Set color to white
+	glColor3f(0.0, 0.0, 0.0); // Set color to white
 
 	glBegin(GL_QUADS);
 
@@ -938,6 +1004,11 @@ void drawWireCuboid(float minX, float minY, float minZ, float maxX, float maxY, 
 	glEnd();
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Set back to fill mode
+
+	glDisable(GL_TEXTURE_2D);
+
+	glLineWidth(1.0f);
+
 }
 
 void setupCamera() {
@@ -1051,7 +1122,7 @@ void myDisplay2(void)
 	//setupCamera();
 	InitLightSource();
 	glLoadIdentity();
-
+	diamondCollision();
 
 	if (isFPV) {
 		gluLookAt(playerX, playerEyeY, playerZ, playerX + xangle, playerEyeY - yangle, playerZ + zangle, 0.0f, abs(playerEyeY), 0.0f);
@@ -1079,38 +1150,21 @@ void myDisplay2(void)
 
 	RenderCeiling();
 
+	RenderCubeLight();
+
+	if(!diamondCollide)
+		RenderDiamond();
+
 	drawPortal1(portal1Coords.x, portal1Coords.y, portal1Coords.z);
 	drawPortal2(portal2Coords.x, portal2Coords.y, portal2Coords.z);
 
 	glPushMatrix();
-	glTranslatef(9.0, 0.0, 9.0);  // Adjust the translation based on your model size and desired position
+	glTranslatef(9.0, 0.0, 9.0);
 	model_button.Draw();
 	glPopMatrix();
 
-	drawWireCuboid(-14.0, 0.0, -14.0, -4.0, scene1Height/1.5, -4.0);
+	drawWireCuboid(-14.0, 0.0, -14.0, -4.0, scene1Height/1.5, -4.0,5.0);
 
-	// Draw Tree Model
-	//glPushMatrix();
-	//glTranslatef(0, 0, 0);
-	//glScalef(0.1, 0.1, 0.1);
-	//model_tree.Draw();
-	//glPopMatrix();
-
-	// Draw house Model
-	//glPushMatrix();
-	//model_house.rot.x = 90.f;
-	//model_house.Draw();
-	//glPopMatrix();
-
-	// Draw Wall Model
-	//glPushMatrix();
-	//glTranslatef(10,0,10);
-	//glRotatef(90.f, 1, 0, 0);
-	//model_wall.Draw();
-	//glPopMatrix();
-	//model_player.Draw();
-
-	//sky box
 	glPushMatrix();
 
 	GLUquadricObj* qobj;
@@ -1124,6 +1178,44 @@ void myDisplay2(void)
 	gluDeleteQuadric(qobj);
 
 	glPopMatrix();
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, WIDTH, 0, HEIGHT);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	// Draw score
+	glColor3f(1.0f, 1.0f, 1.0f);
+	char scoreText[50];
+	snprintf(scoreText, sizeof(scoreText), "Score: %d", score);
+
+	// Adjust the position based on your preference
+	int scoreX = WIDTH - 120;
+	int scoreY = HEIGHT - 50;
+	int timeX = WIDTH - 270;
+	int timeY = HEIGHT - 50;
+
+	glRasterPos2f(scoreX, scoreY);
+	for (size_t i = 0; i < strlen(scoreText); i++) {
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, scoreText[i]);
+	}
+
+	char timerText[50];
+	snprintf(timerText, sizeof(timerText), "Timer: %d", timer);
+	glRasterPos2f(timeX, timeY);
+	for (int i = 0; timerText[i] != '\10'; i++) {
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, timerText[i]);
+	}
+	// Restore the projection and modelview matrices
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+
 	glutSwapBuffers();
 }
 
@@ -1191,6 +1283,7 @@ void LoadAssets()
 	model_ring.Load("Models/ring/ring.3ds");
 	//model_tree.Load("Models/mytree/tree1.3ds");
 	model_button.Load("Models/button/button.3ds");
+	model_diamond.Load("Models/diamond/diamond.3ds");
 
 	// Loading texture files
 	tex_ground.Load("Textures/ground.bmp");
@@ -1449,6 +1542,12 @@ void mouseClicks(int button, int state, int x, int y) {
 	}
 }
 
+void updateTimer(int value) {
+	timer++;		
+	glutTimerFunc(1000, updateTimer, 0);
+	glutPostRedisplay();
+}
+
 //=======================================================================
 // Main Function
 //=======================================================================
@@ -1471,6 +1570,7 @@ void main(int argc, char** argv)
 	glutKeyboardUpFunc(KeyboardUp);
 	glutSetCursor(GLUT_CURSOR_NONE);
 	glutSpecialFunc(Special);
+	glutTimerFunc(1000, updateTimer, 0);
 
 	if (sceneNumber == 1) {
 		glutDisplayFunc(myDisplay);
