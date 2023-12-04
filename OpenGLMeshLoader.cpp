@@ -156,11 +156,8 @@ Model_3DS model_player;
 Model_3DS model_crate;
 Model_3DS model_ring;
 Model_3DS model_button;
-<<<<<<< HEAD
 Model_3DS model_fire;
-=======
 Model_3DS model_diamond;
->>>>>>> b77334161d402a613e531175c2383051e5fd1663
 
 // Textures
 GLTexture tex_ground;
