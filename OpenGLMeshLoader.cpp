@@ -23,6 +23,7 @@ char title[] = "3D Model Loader Sample";
 float wallHalfLength = 15.0;
 float wallHalfWidth = 15.0;
 
+void movementTimerScene2(int value);
 // 3D Projection Options
 GLdouble fovy = 70.0;
 GLdouble aspectRatio = (GLdouble)WIDTH / (GLdouble)HEIGHT;
@@ -31,14 +32,17 @@ GLdouble zFar = 500;
 
 int scene1Height = 25;
 float spikeHeight = 24.9;
+float spikeCubeHeight = 3;
 bool spikeForward = true;
 
 glm::vec3 cube = glm::vec3(0, 0, 7.5);
+glm::vec3 ring = glm::vec3(-12, 1, 10);
 glm::vec3 portal1Coords = glm::vec3(0, 0, 0);
 glm::vec3 portal2Coords = glm::vec3(0, 0, 0);
 bool portal1XNormal = true;
 bool portal2XNormal = true;
 bool isCubeGrabbed = false;
+bool isRingCollected = false;
 
 class Vector3f {
 public:
@@ -136,7 +140,7 @@ float xangle = 0.0f, yangle = 1.0f, zangle = -1.0f; // Camera angles
 float x_pos = 0.0f, y_pos = 0.0f; // Camera yaw
 float sensitivity = 0.005f;
 
-int sceneNumber = 2;
+int sceneNumber = 1;
 
 // Model Variables
 Model_3DS model_house;
@@ -147,6 +151,7 @@ Model_3DS model_player;
 Model_3DS model_crate;
 Model_3DS model_ring;
 Model_3DS model_button;
+Model_3DS model_fire;
 
 // Textures
 GLTexture tex_ground;
@@ -159,7 +164,7 @@ GLTexture tex_portal2;
 
 float playerX = 0;
 float playerY = 0;
-float playerZ = 7.5;
+float playerZ = -10;
 bool keystates[256];
 
 //=======================================================================
@@ -411,8 +416,11 @@ void RenderCrates() {
 
 float ringAnim = 0;
 void RenderRings() {
+	if (isRingCollected) {
+		return;
+	}
 	glPushMatrix();
-	glTranslatef(-12, 1, 10);
+	glTranslatef(ring.x,ring.y,ring.z);
 	glRotatef(ringAnim, 0,0.5, 0);
 	glScalef(0.5, 0.5, 0.5);
 	model_ring.Draw();
@@ -435,52 +443,64 @@ void RenderPlayer() {
 }
 
 void drawSpike() {
-
-	glDisable(GL_LIGHTING);	// Disable lighting 
-	glBindTexture(GL_TEXTURE_2D, tex_spikecube.texture[0]);	// Bind the ground texture
-	glColor3f(1, 1, 1);	// Dim the ground texture a bit
-	
-	float reps = 15;
-	glPushMatrix();
-	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
-	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
-	glVertex3f(-15, spikeHeight, -9);
-	glTexCoord2f(reps, 0);
-	glVertex3f(-15, spikeHeight, 1);
-	glTexCoord2f(reps, reps);
-	glVertex3f(15, spikeHeight, 1);
-	glTexCoord2f(0, reps);
-	glVertex3f(15, spikeHeight, -9);
-	glEnd();
-	glPopMatrix();
-
-	glBindTexture(GL_TEXTURE_2D, tex_spikecube.texture[0]);	// Bind the ground texture
-	glPushMatrix();
-	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
-	glTexCoord2f(15, 0);
-	glVertex3f(-15, spikeHeight, 1);
-	glTexCoord2f(15, 15);
-	glVertex3f(15, spikeHeight, 1);
-	glTexCoord2f(0, 15);
-	glVertex3f(15, spikeHeight + scene1Height, 1);
-	glTexCoord2f(0, 0);		
-	glVertex3f(-15, spikeHeight + scene1Height, 1);
-	glEnd();
-	glPopMatrix();
-	glEnable(GL_LIGHTING);	// Disable lighting 
-
 	glColor3f(1, 1, 1);
 	glPushMatrix();
 	glTranslatef(0, spikeHeight,0);
 	glRotatef(180, 0, 0, 1);
 	model_spike.Draw();
-	//glutSolidCone(1, 2, 40, 40);
 	glPopMatrix();
 }
 
 void RenderSpike() {
+
+	glDisable(GL_LIGHTING);	// Disable lighting 
+	glBindTexture(GL_TEXTURE_2D, tex_spikecube.texture[0]);	// Bind the ground texture
+	glColor3f(1, 1, 1);	// Dim the ground texture a bit
+
+	float reps = 15;
+	glPushMatrix();
+	glBegin(GL_QUADS);
+	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
+	glVertex3f(-15, spikeHeight, -15);
+	glTexCoord2f(reps, 0);
+	glVertex3f(-15, spikeHeight, -5);
+	glTexCoord2f(reps, reps);
+	glVertex3f(15, spikeHeight, -5);
+	glTexCoord2f(0, reps);
+	glVertex3f(15, spikeHeight, -15);
+	glEnd();
+	glPopMatrix();
+
+	glPushMatrix();
+	glBegin(GL_QUADS);
+	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
+	glVertex3f(-15, spikeHeight + spikeCubeHeight, -15);
+	glTexCoord2f(reps, 0);
+	glVertex3f(-15, spikeHeight + spikeCubeHeight, -5);
+	glTexCoord2f(reps, reps);
+	glVertex3f(15, spikeHeight + spikeCubeHeight, -5);
+	glTexCoord2f(0, reps);
+	glVertex3f(15, spikeHeight + spikeCubeHeight, -15);
+	glEnd();
+	glPopMatrix();
+	
+	glBindTexture(GL_TEXTURE_2D, tex_spikecube.texture[0]);	// Bind the ground texture
+	glPushMatrix();
+	glBegin(GL_QUADS);
+	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glTexCoord2f(0, reps);
+	glVertex3f(15, spikeHeight + spikeCubeHeight, -5);
+	glTexCoord2f(0, 0);
+	glVertex3f(-15, spikeHeight + spikeCubeHeight, -5);
+	glTexCoord2f(reps, 0);
+	glVertex3f(-15, spikeHeight, -5);
+	glTexCoord2f(reps, reps);
+	glVertex3f(15, spikeHeight, -5);
+	glEnd();
+	glPopMatrix();
+	glEnable(GL_LIGHTING);	// Disable lighting 
 
 	glColor3f(1, 1, 1);
 	for (int i = 0; i < 5; i++) {
@@ -643,6 +663,28 @@ void RenderCube() {
 	glColor3f(1, 1, 1);
 }
 
+void RenderTargetPortal() {
+	float x = 0, y = 24.99, z = -14;
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, tex_portal1.texture[0]);	
+	glColor3f(0, 1, 0);
+
+	glPushMatrix();
+	glBegin(GL_QUADS);
+	glNormal3f(0, 1, 0);
+	glTexCoord2f(0, 0);		
+	glVertex3f(x - 1, y, z - 1);
+	glTexCoord2f(4, 0);
+	glVertex3f(x - 1, y, z + 1);
+	glTexCoord2f(4, 4);
+	glVertex3f(x + 1, y, z + 1);
+	glTexCoord2f(0, 4);
+	glVertex3f(x + 1, y, z - 1);
+	glEnd();
+	glPopMatrix();
+}
+
 void drawPortal1(float x, float y, float z) {
 	if (x == 0 && z == 0) {
 		return;
@@ -695,9 +737,6 @@ void drawPortal2(float x, float y, float z) {
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, tex_portal2.texture[0]);	// Bind the ground texture
 	glColor3f(1, 1, 1);	// Dim the ground texture a bit
-	float startAngle = 0;
-	float endAngle = 3.141592;
-	int numSegments = 20;
 
 	if (portal2XNormal) {
 		glPushMatrix();
@@ -996,13 +1035,9 @@ void myDisplay(void) {
 		RenderPlayer();
 	}
 
-	glEnable(GL_LIGHTING);
-
 	RenderRings();
 
 	RenderCrates();
-
-	RenderCube();
 
 	RenderGun();
 
@@ -1015,11 +1050,12 @@ void myDisplay(void) {
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, lightIntensity);
 
-	//model_house.Draw();
 	glPushMatrix();
 	glScalef(3, 3, 3);
 	glPopMatrix();
-	// Draw Ground
+
+	RenderTargetPortal();
+
 	RenderGround();
 
 	RenderWall();
@@ -1234,6 +1270,15 @@ void Special(int key, int x, int y) {
 	glutPostRedisplay();
 }
 
+void resetPlayer() {
+	playerX = 0;
+	playerY = 0;
+	playerZ = -10;
+	spikeHeight = 24.9;
+	spikeForward = true;
+	// TODO +Time penalty / decrease score
+}
+
 bool groundCollided(float x,  float y, float z) {
 	if (sceneNumber == 1 && z >= -5 && z <= 5) {
 		if (y >= -5) {
@@ -1243,6 +1288,14 @@ bool groundCollided(float x,  float y, float z) {
 		return false;
 	}
 	return true;
+}
+
+void handleRingCollection() {
+	float ringDistance = sqrt(pow(ring.x - playerX, 2) + pow(ring.z - playerZ, 2));
+	if (ringDistance <= 1) {
+		isRingCollected = true;
+		// play collect sound
+	}
 }
 
 void handleTeleports() {
@@ -1295,11 +1348,25 @@ void handleTeleports() {
 
 }
 
+void toScene2() {
+	sceneNumber = 2;
+	portal1Coords = glm::vec3(0, 0, 0);
+	portal2Coords = glm::vec3(0, 0, 0);
+	playerZ = 15;
+
+	// play win sound
+	glutDisplayFunc(myDisplay2);
+	glutPostRedisplay();
+	glutTimerFunc(16, movementTimerScene2, 0);
+}
+
 void movementTimerScene1(int value) {
 	handleTeleports();
+	handleRingCollection();
 
 	float speed = 0.1;
 	float newX = playerX;
+	float newY = playerY;
 	float newZ = playerZ;
 
 	if (keystates['w']) { // Forward
@@ -1332,17 +1399,61 @@ void movementTimerScene1(int value) {
 	else if (newZ < -wallHalfWidth + 0.2) {
 		newZ = -wallHalfWidth + 0.2;
 	}
+	
+	bool isDead = false;
+	bool atTarget = false;
 
 	if (!groundCollided(newX, playerY, newZ)) {
-		playerEyeY -= speed * 2;
-		playerY -= speed * 2;
+		newY -= speed * 2;
+	}
+
+	if (newY <= -5) {
+		isDead = true;
+	}
+
+	// On top of wall
+	if (newZ <= -5 && newY < spikeHeight + spikeCubeHeight && newY > spikeHeight + spikeCubeHeight - 0.3) {
+		newY = spikeHeight + spikeCubeHeight;
+		if (newY >= 23 && newZ < -13 && newX < 1 && newX > -1) { // Check for goal reached
+			atTarget = true;
+		} else if (newY >= 23.1) {
+			isDead = true;
+		}
+	}
+
+	if (newZ <= -5 && spikeHeight > newY && spikeHeight - newY < 6) { // Squashed
+		isDead = true;
+	}
+
+
+	// Crate Collision
+	float crateDistance = sqrt(pow(14 - newX, 2) + pow(14 - newZ, 2));
+
+	if (crateDistance < 1.5) {
+		if (newX > newZ) {
+			newZ = playerZ;
+		}
+		else {
+			newX = playerX;
+		}
 	}
 
 	playerX = newX;
+	playerY = newY;
 	playerZ = newZ;
+	playerEyeY = playerY + 2;
 
-	glutPostRedisplay();
-	glutTimerFunc(16, movementTimerScene1, 0);
+	if (isDead) {
+		resetPlayer();
+	}
+
+	if (atTarget) {
+		toScene2();
+	}
+	else {
+		glutPostRedisplay();
+		glutTimerFunc(16, movementTimerScene1, 0);
+	}
 }
 
 void movementTimerScene2(int value) {
@@ -1395,6 +1506,7 @@ void movementTimerScene2(int value) {
 	glutTimerFunc(16, movementTimerScene2, 0);
 
 }
+
 void spikeTimer(int value) {
 	if (spikeHeight <= 4) {
 		spikeForward = false;
@@ -1409,7 +1521,7 @@ void spikeTimer(int value) {
 		spikeHeight += 0.02;
 	}
 	glutPostRedisplay();
-	glutTimerFunc(10, spikeTimer, 0);
+	glutTimerFunc(16, spikeTimer, 0);
 }
 
 void resize(int w, int h) {
@@ -1456,7 +1568,7 @@ void main(int argc, char** argv)
 {
 	glutInit(&argc, argv);
 
-	glutInitDisplayMode(GLUT_SINGLE | GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 
 	glutInitWindowSize(1500, 1000);
 
