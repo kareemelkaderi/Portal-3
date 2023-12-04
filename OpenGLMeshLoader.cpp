@@ -145,7 +145,7 @@ float xangle = 0.0f, yangle = 1.0f, zangle = -1.0f; // Camera angles
 float x_pos = 0.0f, y_pos = 0.0f; // Camera yaw
 float sensitivity = 0.005f;
 
-int sceneNumber = 1;
+int sceneNumber = 2;
 
 // Model Variables
 Model_3DS model_house;
@@ -707,7 +707,14 @@ void RenderCube() {
 		float cubeY = playerY + cubeOffsetY;
 		float cubeZ = playerZ + cubeOffsetZ;
 		cube = glm::vec3(cubeX, cubeY, cubeZ);
-	} else if (cube.y > 0) {
+	}
+	else if (cube.x > 8 && cube.x < 10 && cube.z > 8 && cube.z < 10 && cube.y >= 0.441) {
+		cube.y -= 0.02 / cube.y;
+		if (cube.y < 0.441) {
+			cube.y = 0.441;
+		}
+	}
+	else if (cube.y > 0) {
 		cube.y -= 0.02 / cube.y;
 		if (cube.y < 0) {
 			cube.y = 0;
@@ -1179,6 +1186,8 @@ void myDisplay2(void)
 
 	RenderGun();
 
+	RenderCube();
+
 	// Draw Ground
 	RenderGround2();
 
@@ -1195,7 +1204,7 @@ void myDisplay2(void)
 	drawPortal2(portal2Coords.x, portal2Coords.y, portal2Coords.z);
 
 	glPushMatrix();
-	glTranslatef(9.0, 0.0, 9.0);
+	glTranslatef(9.0, 0.01, 9.0);
 	model_button.Draw();
 	glPopMatrix();
 
