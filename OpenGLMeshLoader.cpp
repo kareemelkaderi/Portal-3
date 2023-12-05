@@ -22,7 +22,7 @@ char title[] = "3D Model Loader Sample";
 
 float wallHalfLength = 15.0;
 float wallHalfWidth = 15.0;
-int score = 0;
+int score = 2000;
 int timer = 0;
 bool diamondCollide = false;
 bool diamondCollide2 = false;
@@ -55,6 +55,9 @@ bool isCubeGrabbed = false;
 bool isRingCollected = false;
 bool isButtonPressed = false;
 bool isPlayerOnButton = false;
+bool isGameOver = false;
+bool isPlayerFrozen = false;
+
 
 class Vector3f {
 public:
@@ -152,7 +155,7 @@ float xangle = 0.0f, yangle = 1.0f, zangle = -1.0f; // Camera angles
 float x_pos = 0.0f, y_pos = 0.0f; // Camera yaw
 float sensitivity = 0.005f;
 
-int sceneNumber = 2;
+int sceneNumber = 1;
 
 // Model Variables
 Model_3DS model_house;
@@ -178,6 +181,7 @@ GLTexture tex_spikecube;
 GLTexture tex_portal1;
 GLTexture tex_portal2;
 GLTexture tex_frame;
+GLTexture tex_gameOver;
 
 float playerX = 0;
 float playerY = 0;
@@ -415,6 +419,55 @@ void RenderCeiling2() {
 
 	glColor3f(1, 1, 1);
 }
+
+void displayGameOver() {
+	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glLoadIdentity();
+	glDisable(GL_LIGHTING);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, WIDTH, 0, HEIGHT);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	// Draw "Game Over" message
+	glColor3f(1.0f, 1.0f, 1.0f);
+	char gameOverText[] = "Game Over";
+	glRasterPos2f(WIDTH / 2 - 50, HEIGHT / 2);
+	for (size_t i = 0; i < strlen(gameOverText); i++) {
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, gameOverText[i]);
+	}
+
+	// Draw score
+	char scoreText[50];
+	snprintf(scoreText, sizeof(scoreText), "Score: %d", score);
+	glRasterPos2f(WIDTH / 2 - 50, HEIGHT / 2 - 50);
+	for (size_t i = 0; i < strlen(scoreText); i++) {
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, scoreText[i]);
+	}
+
+	// Draw timer
+	char timerText[50];
+	snprintf(timerText, sizeof(timerText), "Timer: %d", timer);
+	glRasterPos2f(WIDTH / 2 - 50, HEIGHT / 2 - 100);
+	for (int i = 0; timerText[i] != '\0'; i++) {
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, timerText[i]);
+	}
+
+	// Restore the projection and modelview matrices
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glEnable(GL_LIGHTING);
+}
+
+
+
 void RenderGun() {
 	float dx = playerX - (playerX - xangle);
 	float dz = playerZ - (playerZ - zangle);
@@ -562,14 +615,22 @@ void RenderDiamond3() {
 }
 
 void diamondCollision() {
+	if (diamondCollide) {
+		return;
+	}
 	if (playerX > -11.0 && playerX<-9.3 && playerZ > -11.0 && playerZ < -9.3) {
 		diamondCollide = true;
+		score += 50;
 	}
 }
 
 void diamondCollision2() {
+	if (diamondCollide2) {
+		return;
+	}
 	if (playerX < 11.0 && playerX > 9.3 && playerZ > -11.0 && playerZ < -9.3) {
 		diamondCollide2 = true;
+		score += 50;
 	}
 }
 
@@ -1084,6 +1145,10 @@ void RenderCube() {
 	model_cube.Draw();
 	glPopMatrix();
 	glColor3f(1, 1, 1);
+}
+
+bool atTarget2() {
+	return playerZ <= -14.4 && playerX < 6 && playerX > 4;
 }
 
 void RenderTargetPortal() {
@@ -1607,6 +1672,49 @@ void myDisplay(void) {
 	gluDeleteQuadric(qobj);
 
 	glPopMatrix();
+
+	{
+		glDisable(GL_LIGHTING);
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+		gluOrtho2D(0, WIDTH, 0, HEIGHT);
+
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+
+		// Draw score
+		glColor3f(1.0f, 1.0f, 1.0f);
+		char scoreText[50];
+		snprintf(scoreText, sizeof(scoreText), "Score: %d", score);
+
+		// Adjust the position based on your preference
+		int scoreX = WIDTH - 220;
+		int scoreY = HEIGHT - 50;
+		int timeX = WIDTH - 370;
+		int timeY = HEIGHT - 50;
+
+		glRasterPos2f(scoreX, scoreY);
+		for (size_t i = 0; i < strlen(scoreText); i++) {
+			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, scoreText[i]);
+		}
+
+		glColor3f(1.0f, 1.0f, 1.0f);
+		char timerText[50];
+		snprintf(timerText, sizeof(timerText), "Timer: %d", timer);
+		glRasterPos2f(timeX, timeY);
+		for (int i = 0; timerText[i] != '\0'; i++) {
+			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, timerText[i]);
+		}
+
+		// Restore the projection and modelview matrices
+		glPopMatrix();
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+		glMatrixMode(GL_MODELVIEW);
+		glEnable(GL_LIGHTING);
+	}
 	glutSwapBuffers();
 }
 
@@ -1705,9 +1813,9 @@ void myDisplay2(void)
 		snprintf(scoreText, sizeof(scoreText), "Score: %d", score);
 
 		// Adjust the position based on your preference
-		int scoreX = WIDTH - 120;
+		int scoreX = WIDTH - 220;
 		int scoreY = HEIGHT - 50;
-		int timeX = WIDTH - 270;
+		int timeX = WIDTH - 370;
 		int timeY = HEIGHT - 50;
 
 		glRasterPos2f(scoreX, scoreY);
@@ -1719,7 +1827,7 @@ void myDisplay2(void)
 		char timerText[50];
 		snprintf(timerText, sizeof(timerText), "Timer: %d", timer);
 		glRasterPos2f(timeX, timeY);
-		for (int i = 0; timerText[i] != '\10'; i++) {
+		for (int i = 0; timerText[i] != '\0'; i++) {
 			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, timerText[i]);
 		}
 
@@ -1730,11 +1838,12 @@ void myDisplay2(void)
 		glMatrixMode(GL_MODELVIEW);
 		glEnable(GL_LIGHTING);
 	}
+	if (isButtonPressed && atTarget2()) {
+		displayGameOver();
+		isGameOver = true;
+		isPlayerFrozen = true;
+	}
 	glutSwapBuffers();
-}
-
-void displayGameOver() {
-
 }
 
 //=======================================================================
@@ -1817,6 +1926,7 @@ void LoadAssets()
 	tex_portal2.Load("Textures/portal2.bmp");
 	tex_spikecube.Load("Textures/spikecube.bmp");
 	tex_frame.Load("Textures/wood.bmp");
+	tex_gameOver.Load("Textures/gameOver.bmp");
 	loadBMP(&tex, "Textures/blu-sky-3.bmp", true);
 }
 
@@ -1868,11 +1978,16 @@ bool groundCollided(float x,  float y, float z) {
 }
 
 void handleRingCollection() {
+	if (isRingCollected) {
+		return;
+	}
 	float ringDistance = sqrt(pow(ring.x - playerX, 2) + pow(ring.z - playerZ, 2));
 	if (ringDistance <= 1) {
 		isRingCollected = true;
+		score += 50;
 		// play collect sound
 	}
+
 }
 
 void handleTeleports() {
@@ -2045,64 +2160,57 @@ void movementTimerScene1(int value) {
 	}
 }
 
-bool atTarget2() {
-	return playerZ <= -14.4 && playerX < 6 && playerX > 4;
-}
 
 void movementTimerScene2(int value) {
-	handleTeleports();
+	if (!isPlayerFrozen) {
+		handleTeleports();
 
-	float speed = 0.1;
-	float newX = playerX;
-	float newZ = playerZ;
+		float speed = 0.1;
+		float newX = playerX;
+		float newZ = playerZ;
 
-	if (keystates['w']) { // Forward
-		newX += xangle * speed;
-		newZ += zangle * speed;
-	}
-	if (keystates['s']) { // Backward
-		newX -= xangle * speed;
-		newZ -= zangle * speed;
-	}
-	if (keystates['d']) { // Right
-		newX -= zangle * speed;
-		newZ += xangle * speed;
-	}
-	if (keystates['a']) { // Left
-		newX += zangle * speed;
-		newZ -= xangle * speed;
-	}
+		if (keystates['w']) { // Forward
+			newX += xangle * speed;
+			newZ += zangle * speed;
+		}
+		if (keystates['s']) { // Backward
+			newX -= xangle * speed;
+			newZ -= zangle * speed;
+		}
+		if (keystates['d']) { // Right
+			newX -= zangle * speed;
+			newZ += xangle * speed;
+		}
+		if (keystates['a']) { // Left
+			newX += zangle * speed;
+			newZ -= xangle * speed;
+		}
 
-	if (newX > wallHalfLength - 0.2) {
-		newX = wallHalfLength - 0.2;
-	}
-	else if (newX < -wallHalfLength + 0.2) {
-		newX = -wallHalfWidth + 0.2;
-	}
+		if (newX > wallHalfLength - 0.2) {
+			newX = wallHalfLength - 0.2;
+		}
+		else if (newX < -wallHalfLength + 0.2) {
+			newX = -wallHalfWidth + 0.2;
+		}
 
-	if (newZ > wallHalfWidth - 0.2) {
-		newZ = wallHalfWidth - 0.2;
+		if (newZ > wallHalfWidth - 0.2) {
+			newZ = wallHalfWidth - 0.2;
+		}
+		else if (newZ < -wallHalfWidth + 0.2) {
+			newZ = -wallHalfWidth + 0.2;
+		}
+
+		if (!groundCollided(newX, playerY, newZ)) {
+			playerEyeY -= speed * 2;
+			playerY -= speed * 2;
+		}
+
+		playerX = newX;
+		playerZ = newZ;
+
+		glutPostRedisplay();
+		glutTimerFunc(16, movementTimerScene2, 0);
 	}
-	else if (newZ < -wallHalfWidth + 0.2) {
-		newZ = -wallHalfWidth + 0.2;
-	}
-
-	if (!groundCollided(newX, playerY, newZ)) {
-		playerEyeY -= speed * 2;
-		playerY -= speed * 2;
-	}
-
-	if (isButtonPressed && atTarget2()) {
-		displayGameOver();
-		std::cout << "Game Over";
-	}
-
-	playerX = newX;
-	playerZ = newZ;
-
-	glutPostRedisplay();
-	glutTimerFunc(16, movementTimerScene2, 0);
-
 }
 
 void spikeTimer(int value) {
@@ -2161,7 +2269,11 @@ void mouseClicks(int button, int state, int x, int y) {
 }
 
 void updateTimer(int value) {
-	timer++;		
+	if (isGameOver) {
+		return;
+	}
+	timer++;	
+	score -= 2;
 	glutTimerFunc(1000, updateTimer, 0);
 	glutPostRedisplay();
 }
