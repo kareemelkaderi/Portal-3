@@ -1,4 +1,5 @@
 #include <iostream>
+#include <Windows.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +10,7 @@
 #include <glm/glm.hpp>
 #include <glut.h>
 
+#pragma comment(lib, "winmm.lib")
 #define GLUT_KEY_ESCAPE 27
 #define DEG2RAD(a) (a * 0.0174532925)
 #define _CRT_SECURE_NO_WARNINGS
@@ -49,6 +51,8 @@ glm::vec3 cube = glm::vec3(-8, 0, -8);
 glm::vec3 ring = glm::vec3(-12, 1, 10);
 glm::vec3 portal1Coords = glm::vec3(0, 0, 0);
 glm::vec3 portal2Coords = glm::vec3(0, 0, 0);
+float portal1Scale = 0;
+float portal2Scale = 0;
 bool portal1XNormal = true;
 bool portal2XNormal = true;
 bool isCubeGrabbed = false;
@@ -191,15 +195,44 @@ bool keystates[256];
 void InitLightSource()
 {
 	glEnable(GL_LIGHTING);
-	//glEnable(GL_LIGHT0);
+	glEnable(GL_LIGHT7);
 
 	// Set light properties
 	GLfloat lightPosition[] = { 0, 5, 0.0f, 1.0f };
 	GLfloat lightDiffuse[] = { 0.1f, 0.1f, 0.1f, 1.0f };
+	if (sceneNumber == 1) {
+		lightDiffuse[0] = 0.6;
+		lightDiffuse[1] = 0.6;
+		lightDiffuse[2] = 0.6;
+	}
 
-	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
+	glLightfv(GL_LIGHT7, GL_POSITION, lightPosition);
+	glLightfv(GL_LIGHT7, GL_DIFFUSE, lightDiffuse);
 
+}
+
+void playCollect() {
+	PlaySound(TEXT("collect.wav"), NULL, SND_FILENAME | SND_ASYNC);
+}
+
+void playCollide() {
+	PlaySound(TEXT("collide.wav"), NULL, SND_FILENAME | SND_ASYNC);
+}
+
+void playDead() {
+	PlaySound(TEXT("loss.wav"), NULL, SND_FILENAME | SND_ASYNC);
+}
+
+void playWin() {
+	PlaySound(TEXT("win.wav"), NULL, SND_FILENAME | SND_ASYNC);
+}
+
+void playButtonPressed() {
+	PlaySound(TEXT("targetCollect.wav"), NULL, SND_FILENAME | SND_ASYNC);
+}
+
+void playTeleport() {
+	// play teleport sound
 }
 
 void resetPlayer() {
@@ -208,9 +241,11 @@ void resetPlayer() {
 	playerZ = -10;
 	spikeHeight = 24.9;
 	spikeForward = true;
-
+	isCubeGrabbed = false;
+	playDead();
 	portal1Coords = glm::vec3(0, 0, 0);
 	portal2Coords = glm::vec3(0, 0, 0);
+	cube = glm::vec3(-8, 0, -8);
 	// TODO +Time penalty / decrease score
 }
 //=======================================================================
@@ -391,7 +426,6 @@ void RenderCeiling() {
 }
 
 void RenderCeiling2() {
-	glDisable(GL_LIGHTING);	// Disable lighting 
 
 	glColor3f(0.6, 0.6, 0.6);	// Dim the ground texture a bit
 
@@ -415,20 +449,44 @@ void RenderCeiling2() {
 
 	glColor3f(1, 1, 1);
 }
+
+float gunZAnim = -0.9;
+bool gunYForward = false;
+float gunYAngle = 0;
 void RenderGun() {
 	float dx = playerX - (playerX - xangle);
 	float dz = playerZ - (playerZ - zangle);
 	float angle = atan2(dx, dz) * (180.0f / 3.141592);
+
+	if (!gunYForward) {
+		if (gunYAngle > 0) {
+			gunYAngle -=3;
+		}
+	}
+	else {
+		if (gunYAngle < 33) {
+			gunYAngle += 3;
+		}
+		else {
+			gunYForward = false;
+		}
+	}
+
 	if (isFPV) {
 		glPushMatrix();
 		glTranslatef(playerX, playerY + 1.6, playerZ);
 		glRotatef(angle - 190, 0, 1, 0);
 		if (isCubeGrabbed) {
-			glTranslatef(0.3, 0, -1.2);
+			if (gunZAnim > -1.2) {
+				gunZAnim -= 0.05;
+			}
+			glTranslatef(0.3, 0, gunZAnim);
 		}
 		else {
+			gunZAnim = -0.9;
 			glTranslatef(0.3, 0, -0.9);
 		}
+		glRotatef(gunYAngle, 1, 0, 0);
 		glScalef(0.5, 0.5, 0.5);
 		model_gun.Draw();
 		glPopMatrix();
@@ -563,12 +621,18 @@ void RenderDiamond3() {
 
 void diamondCollision() {
 	if (playerX > -11.0 && playerX<-9.3 && playerZ > -11.0 && playerZ < -9.3) {
+		if (!diamondCollide) {
+			playCollect();
+		}
 		diamondCollide = true;
 	}
 }
 
 void diamondCollision2() {
 	if (playerX < 11.0 && playerX > 9.3 && playerZ > -11.0 && playerZ < -9.3) {
+		if (!diamondCollide2) {
+			playCollect();
+		}
 		diamondCollide2 = true;
 	}
 }
@@ -829,7 +893,7 @@ void RenderWall() {
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(1, 0, 0);	// Set quad normal direction.
+	glNormal3f(-1, 0, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(wallHalfLength, 0, -wallHalfWidth);
 	glTexCoord2f(4, 0);
@@ -939,7 +1003,7 @@ void RenderWall2() {
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glNormal3f(1, 0, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(-wallHalfLength, 0, -wallHalfWidth);
 	glTexCoord2f(4, 0);
@@ -953,7 +1017,7 @@ void RenderWall2() {
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glNormal3f(-1, 0, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(wallHalfLength, 0, -wallHalfWidth);
 	glTexCoord2f(4, 0);
@@ -967,7 +1031,7 @@ void RenderWall2() {
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glNormal3f(0, 0, -1);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(-wallHalfLength, 0, wallHalfWidth);
 	glTexCoord2f(4, 0);
@@ -981,7 +1045,7 @@ void RenderWall2() {
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glNormal3f(0, 0, 1);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(-wallHalfLength, 0, -wallHalfWidth);
 	glTexCoord2f(4, 0);
@@ -1052,6 +1116,7 @@ void RenderWall2() {
 	glColor3f(1, 1, 1);	// Set material back to white instead of grey used for the ground texture.
 }
 
+float cubeAnim = 0;
 void RenderCube() {
 	isButtonPressed = false;
 	if (isCubeGrabbed) {
@@ -1061,6 +1126,12 @@ void RenderCube() {
 		float cubeX = playerX + cubeOffsetX;
 		float cubeY = playerY + cubeOffsetY;
 		float cubeZ = playerZ + cubeOffsetZ;
+		if (cubeAnim < 1) {
+			cubeX = ((cubeX - cube.x) * cubeAnim) + cube.x;
+			cubeY = ((cubeY - cube.y) * cubeAnim) + cube.y;
+			cubeZ = ((cubeZ - cube.z) * cubeAnim) + cube.z;
+			cubeAnim += 0.1;
+		}
 		cube = glm::vec3(cubeX, cubeY, cubeZ);
 	}
 	else if (cube.x > 8 && cube.x < 10 && cube.z > 8 && cube.z < 10 && cube.y >= 0.441) {
@@ -1077,6 +1148,10 @@ void RenderCube() {
 		}
 	}
 
+	if (!isCubeGrabbed) {
+		cubeAnim = 0;
+	}
+
 	glColor3f(0.48, 0.48, 0.48);
 	glPushMatrix();
 	glTranslatef(cube.x,cube.y+0.01,cube.z);
@@ -1089,6 +1164,7 @@ void RenderCube() {
 void RenderTargetPortal() {
 	float x = 0, y = 24.99, z = -14;
 
+	glDisable(GL_LIGHTING);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, tex_portal1.texture[0]);	
 	glColor3f(0, 1, 0);
@@ -1106,6 +1182,7 @@ void RenderTargetPortal() {
 	glVertex3f(x + 1, y, z - 1);
 	glEnd();
 	glPopMatrix();
+	glEnable(GL_LIGHTING);
 }
 
 void RenderTargetPortal2() {
@@ -1140,14 +1217,18 @@ void drawPortal1(float x, float y, float z) {
 		if (x == 0 && z == 0) {
 			return;
 		}
+		glDisable(GL_LIGHTING);
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, tex_portal1.texture[0]);	// Bind the ground texture
 		float startAngle = 0;
 		float endAngle = 3.141592;
 		int numSegments = 20;
 
+		glPushMatrix();
+		glTranslatef(x, y, z);
+		glScalef(portal1Scale, portal1Scale, portal1Scale);
+		glTranslatef(-x,-y,-z);
 		if (portal1XNormal) {
-			glPushMatrix();
 			glBegin(GL_QUADS);
 			glNormal3f(0, 1, 0);	// Set quad normal direction.
 			glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
@@ -1161,7 +1242,6 @@ void drawPortal1(float x, float y, float z) {
 			glEnd();
 		}
 		else {
-			glPushMatrix();
 			glBegin(GL_QUADS);
 			glNormal3f(0, 1, 0);	// Set quad normal direction.
 			glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
@@ -1178,6 +1258,9 @@ void drawPortal1(float x, float y, float z) {
 		glPopMatrix();
 
 		glEnable(GL_LIGHTING);
+		if (portal1Scale < 1) {
+			portal1Scale += 0.05;
+		}
 	}
 }
 
@@ -1192,8 +1275,11 @@ void drawPortal2(float x, float y, float z) {
 		glBindTexture(GL_TEXTURE_2D, tex_portal2.texture[0]);	// Bind the ground texture
 		glColor3f(1, 1, 1);	// Dim the ground texture a bit
 
+		glPushMatrix();
+		glTranslatef(x, y, z);
+		glScalef(portal2Scale, portal2Scale, portal2Scale);
+		glTranslatef(-x, -y, -z);
 		if (portal2XNormal) {
-			glPushMatrix();
 			glBegin(GL_QUADS);
 			glNormal3f(0, 1, 0);	// Set quad normal direction.
 			glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
@@ -1207,7 +1293,6 @@ void drawPortal2(float x, float y, float z) {
 			glEnd();
 		}
 		else {
-			glPushMatrix();
 			glBegin(GL_QUADS);
 			glNormal3f(0, 1, 0);	// Set quad normal direction.
 			glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
@@ -1224,6 +1309,9 @@ void drawPortal2(float x, float y, float z) {
 		glPopMatrix();
 
 		glEnable(GL_LIGHTING);
+		if (portal2Scale < 1) {
+			portal2Scale += 0.05;
+		}
 	}
 }
 
@@ -1301,9 +1389,11 @@ void setPortal1() {
 	if (distance >= 4.04) {
 		portal1XNormal = newPortalNormal;
 		portal1Coords = glm::vec3(newX, newY, newZ);
+		portal1Scale = 0;
+		gunYForward = true;
 	}
 	else {
-		//play error sound
+		playCollide();
 	}
 }
 
@@ -1380,9 +1470,11 @@ void setPortal2() {
 	if (distance >= 4.04) {
 		portal2XNormal = newPortalNormal;
 		portal2Coords = glm::vec3(newX, newY, newZ);
+		portal2Scale = 0;
+		gunYForward = true;
 	}
 	else {
-		//play error sound
+		playCollide();
 	}
 }
 
@@ -1446,7 +1538,6 @@ void drawWireCuboid(float minX, float minY, float minZ, float maxX, float maxY, 
 	glLineWidth(1.0f);
 
 }
-
 
 void setupCamera() {
 	glMatrixMode(GL_PROJECTION);
@@ -1531,7 +1622,7 @@ void grabCube() {
 		isCubeGrabbed = true;
 	}
 	else {
-		// play error sound
+		playCollide();
 	}
 }
 
@@ -1576,8 +1667,6 @@ void myDisplay(void) {
 
 	drawCandle(14, 2.5, 14);
 
-	RenderCubeLight();
-
 	RenderGun();
 
 	drawPortal1(portal1Coords.x, portal1Coords.y, portal1Coords.z);
@@ -1614,7 +1703,7 @@ void myDisplay2(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//setupCamera();
-	//InitLightSource();
+	InitLightSource();
 	glLoadIdentity();
 	diamondCollision();
 	diamondCollision2();
@@ -1672,7 +1761,10 @@ void myDisplay2(void)
 	model_button.Draw();
 	glPopMatrix();
 
+	glPushMatrix();
+	glTranslatef(0, 0.1, 0);
 	drawWireCuboid(-16.0, 0.0, -16.0, -4.0, scene1Height/1.5, -4.0,20.0);
+	glPopMatrix();
 
 	glPushMatrix();
 
@@ -1870,8 +1962,10 @@ bool groundCollided(float x,  float y, float z) {
 void handleRingCollection() {
 	float ringDistance = sqrt(pow(ring.x - playerX, 2) + pow(ring.z - playerZ, 2));
 	if (ringDistance <= 1) {
+		if (!isRingCollected) {
+			playCollect();
+		}
 		isRingCollected = true;
-		// play collect sound
 	}
 }
 
@@ -1882,11 +1976,12 @@ void handleTeleports() {
 
 	float portal1Distance = sqrt(pow(portal1Coords.x - playerX, 2) + pow(portal1Coords.z - playerZ, 2));
 	float portal1YDistance = abs(portal1Coords.y - playerY);
-	if (portal1Distance <= 0.25 && portal1YDistance < 3.5) {
+	if (portal1Distance <= 0.8 && portal1YDistance < 3.5) {
 		playerX = portal2Coords.x;
 		playerY = portal2Coords.y;
 		playerEyeY = playerY + 2;
 		playerZ = portal2Coords.z;
+		playTeleport();
 
 		if (portal2Coords.x <= -14.98) {
 			playerX += 1;
@@ -1908,23 +2003,24 @@ void handleTeleports() {
 	}
 	float portal2Distance = sqrt(pow(portal2Coords.x - playerX, 2) + pow(portal2Coords.z - playerZ, 2));
 	float portal2YDistance = abs(portal2Coords.y - playerY);
-	if (portal2Distance <= 0.25 && portal2YDistance < 3.5) {
+	if (portal2Distance <= 0.8 && portal2YDistance < 3.5) {
 		playerX = portal1Coords.x;
 		playerY = portal1Coords.y;
 		playerEyeY = playerY + 2;
 		playerZ = portal1Coords.z;
+		playTeleport();
 
 		if (portal1Coords.x <= -14.98) {
-			playerX += 0.4;
+			playerX += 1;
 		}
 		else if (portal1Coords.x >= 14.98) {
-			playerX -= 0.4;
+			playerX -= 1;
 		}
 		else if (portal1Coords.z >= 14.98) {
-			playerZ -= 0.4;
+			playerZ -= 1;
 		}
 		else if (portal1Coords.z <= -14.98) {
-			playerZ += 0.4;
+			playerZ += 1;
 		}
 		if (playerX < -3.5 && playerZ < -3.5) {
 			isInsideFrame = true;
@@ -1943,7 +2039,7 @@ void toScene2() {
 	portal2Coords = glm::vec3(0, 0, 0);
 	playerZ = 15;
 
-	// play win sound
+	playWin();
 	glutDisplayFunc(myDisplay2);
 	glutPostRedisplay();
 	glutTimerFunc(16, movementTimerScene2, 0);
@@ -2092,9 +2188,14 @@ void movementTimerScene2(int value) {
 		playerY -= speed * 2;
 	}
 
-	if (isButtonPressed && atTarget2()) {
-		displayGameOver();
-		std::cout << "Game Over";
+	if (atTarget2()) {
+		if (isButtonPressed) {
+			displayGameOver();
+			playWin();
+		}
+		else {
+			playCollide();
+		}
 	}
 
 	playerX = newX;
