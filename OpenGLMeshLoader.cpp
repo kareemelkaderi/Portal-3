@@ -49,6 +49,8 @@ bool portal1XNormal = true;
 bool portal2XNormal = true;
 bool isCubeGrabbed = false;
 bool isRingCollected = false;
+bool isButtonPressed = false;
+bool isPlayerOnButton = false;
 
 class Vector3f {
 public:
@@ -159,7 +161,7 @@ Model_3DS model_ring;
 Model_3DS model_button;
 Model_3DS model_fire;
 Model_3DS model_diamond;
-
+Model_3DS model_candle;
 // Textures
 GLTexture tex_ground;
 GLTexture tex_ground2;
@@ -185,17 +187,28 @@ bool keystates[256];
 void InitLightSource()
 {
 	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
+	//glEnable(GL_LIGHT0);
 
 	// Set light properties
-	GLfloat lightPosition[] = { cubePositionX, scene1Height - 0.5f, 0.0f, 1.0f };
-	GLfloat lightDiffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	GLfloat lightPosition[] = { 0, 5, 0.0f, 1.0f };
+	GLfloat lightDiffuse[] = { 0.1f, 0.1f, 0.1f, 1.0f };
 
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
 
 }
 
+void resetPlayer() {
+	playerX = 0;
+	playerY = 0;
+	playerZ = -10;
+	spikeHeight = 24.9;
+	spikeForward = true;
+
+	portal1Coords = glm::vec3(0, 0, 0);
+	portal2Coords = glm::vec3(0, 0, 0);
+	// TODO +Time penalty / decrease score
+}
 //=======================================================================
 // Material Configuration Function
 //======================================================================
@@ -322,7 +335,6 @@ void RenderGround()
 }
 
 void RenderGround2() {
-	glDisable(GL_LIGHTING);    // Disable lighting 
 
 	glColor3f(1.0, 1.0, 1.0);    // Set color to white
 
@@ -350,7 +362,6 @@ void RenderGround2() {
 }
 
 void RenderCeiling() {
-	glDisable(GL_LIGHTING);	// Disable lighting 
 
 	glColor3f(0.6, 0.6, 0.6);	// Dim the ground texture a bit
 
@@ -360,7 +371,7 @@ void RenderCeiling() {
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glNormal3f(0, -1, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(-15, scene1Height, -15);
 	glTexCoord2f(10, 0);
@@ -386,7 +397,7 @@ void RenderCeiling2() {
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glNormal3f(0, -1, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(-15, scene1Height, -15);
 	glTexCoord2f(10, 0);
@@ -500,12 +511,14 @@ void diamondCollision() {
 
 void buttonCollision() {
 	if (!buttonCollide && playerX > 8.0 && playerX < 10.0 && playerZ > 8.0 && playerZ < 10.0) {
-		playerY += 0.2;
+		playerY += 0.4;
+		playerEyeY = playerY + 2;
 		buttonCollide = true;
 	}
 	else if (buttonCollide && (playerX < 8.0 || playerX > 10.0 || playerZ < 8.0 || playerZ > 10.0)) {
 		buttonCollide = false;
-		playerY -= 0.2;
+		playerY -= 0.4;
+		playerEyeY = playerY + 2;
 	}
 }
 
@@ -522,26 +535,103 @@ void RenderPlayer() {
 	glPopMatrix();
 }
 
+float lightTimer = 1 / 60;
 void RenderCubeLight() {
-	// Set the cube color and material properties
-	GLfloat lightColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, lightColor);
-
-	float cubePosition[] = { cubePositionX, scene1Height - 0.5f, 0.0f };
-
-	cubePositionX += 0.1f * translationDirection;  // Adjust the translation speed as needed
-
+	glEnable(GL_LIGHTING);
+	float cubePosition[] = { cubePositionX, scene1Height - 0.51, 0.0f };
 	if (cubePositionX > 15 || cubePositionX < -15) {
-		translationDirection *= -1;  // Reverse the direction
+		translationDirection *= -1; 
 	}
-		// Draw the cube
-		glPushMatrix();
-		glTranslatef(cubePosition[0], cubePosition[1], cubePosition[2]);
-		glutSolidCube(1.0f);
-		glPopMatrix();
+	cubePositionX += 0.1f * translationDirection; 
+
+	glLineWidth(6);
+	glColor3f(0, 0, 1);
+	glPushMatrix();
+	glTranslatef(cubePosition[0], cubePosition[1], cubePosition[2]);
+	glutWireCube(1.0f);
+	glPopMatrix();
+
+	GLfloat lightPosition[] = { cubePosition[0], 20, cubePosition[2] - 1, 1.0}; // Set candleTipX, Y, Z to the tip position
+	GLfloat lightDiffuse[] = { 0.7, 0.7, 1.0, 1.0 }; // Orange color for light
+
+	glLightfv(GL_LIGHT5, GL_POSITION, lightPosition);
+	glLightfv(GL_LIGHT5, GL_DIFFUSE, lightDiffuse);
+	glLightf(GL_LIGHT5, GL_CONSTANT_ATTENUATION, 0.1);
+	glLightf(GL_LIGHT5, GL_LINEAR_ATTENUATION, 0.01);
+	glLightf(GL_LIGHT5, GL_QUADRATIC_ATTENUATION, 0.001);
+	glEnable(GL_LIGHT5);
+
+	glColor3f(1, 1, 1);
 	
 }
 
+void drawCandle(float x, float y, float z) {
+	glEnable(GL_LIGHTING);
+	glPushMatrix();
+	glTranslatef(x, y, z);
+	glScalef(0.5, 0.5, 0.5);
+	model_candle.Draw();
+	glPopMatrix();
+
+	lightTimer += 1.0 / 60.0;
+
+	GLfloat lightPosition[] = { x, y + 0.77, z - 1, 1.0 }; // Set candleTipX, Y, Z to the tip position
+	GLfloat lightDiffuse[] = { 1.0, 0.5, 0.0, 1.0 }; // Orange color for light
+	GLfloat baseIntensity = 0.7; // Base light intensity
+	GLfloat amplitude = 0.5; // Amplitude of light intensity variation
+	GLfloat currentTime = lightTimer; 
+	GLfloat frequency = 2.0; 
+	GLfloat lightIntensity = baseIntensity + amplitude * sin(currentTime * frequency);
+
+	glLightfv(GL_LIGHT4, GL_POSITION, lightPosition);
+	glLightfv(GL_LIGHT4, GL_DIFFUSE, lightDiffuse);
+	glLightf(GL_LIGHT4, GL_CONSTANT_ATTENUATION, 0.5);
+	glLightf(GL_LIGHT4, GL_LINEAR_ATTENUATION, lightIntensity * 2);
+	glLightf(GL_LIGHT4, GL_QUADRATIC_ATTENUATION, lightIntensity * 1);
+	glEnable(GL_LIGHT4);
+
+	GLfloat lightPosition1[] = { x + 0.1, y + 0.77, z, 1.0 }; // Set candleTipX, Y, Z to the tip position
+	baseIntensity = 0.7; // Base light intensity
+	amplitude = 0.5; // Amplitude of light intensity variation
+	currentTime = lightTimer;
+	frequency = 2.0;
+	lightIntensity = baseIntensity + amplitude * sin(currentTime * frequency);
+
+	glLightfv(GL_LIGHT1, GL_POSITION, lightPosition1);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, lightDiffuse);
+	glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 0.05);
+	glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, lightIntensity * 2);
+	glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, lightIntensity * 1);
+	glEnable(GL_LIGHT1);
+
+	GLfloat lightPosition2[] = { x - 0.1, y + 0.77, z, 1.0 }; // Set candleTipX, Y, Z to the tip position
+	baseIntensity = 0.7; // Base light intensity
+	amplitude = 0.5; // Amplitude of light intensity variation
+	currentTime = lightTimer;
+	frequency = 2.0;
+	lightIntensity = baseIntensity + amplitude * sin(currentTime * frequency);
+
+	glLightfv(GL_LIGHT2, GL_POSITION, lightPosition2);
+	glLightfv(GL_LIGHT2, GL_DIFFUSE, lightDiffuse);
+	glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, 0.05);
+	glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, lightIntensity * 2);
+	glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, lightIntensity * 1);
+	glEnable(GL_LIGHT2);
+
+	GLfloat lightPosition3[] = { x, y + 0.77, z + 1, 1.0 }; // Set candleTipX, Y, Z to the tip position
+	baseIntensity = 0.7; // Base light intensity
+	amplitude = 0.5; // Amplitude of light intensity variation
+	currentTime = lightTimer;
+	frequency = 2.0;
+	lightIntensity = baseIntensity + amplitude * sin(currentTime * frequency);
+
+	glLightfv(GL_LIGHT3, GL_POSITION, lightPosition3);
+	glLightfv(GL_LIGHT3, GL_DIFFUSE, lightDiffuse);
+	glLightf(GL_LIGHT3, GL_CONSTANT_ATTENUATION, 0.05);
+	glLightf(GL_LIGHT3, GL_LINEAR_ATTENUATION, lightIntensity * 2);
+	glLightf(GL_LIGHT3, GL_QUADRATIC_ATTENUATION, lightIntensity * 1);
+	glEnable(GL_LIGHT3);
+}
 
 void drawSpike() {
 	glColor3f(1, 1, 1);
@@ -616,17 +706,14 @@ void RenderSpike() {
 }
 
 void RenderWall() {
-	glDisable(GL_LIGHTING);	// Disable lighting 
-
 	glColor3f(0.6, 0.6, 0.6);	// Dim the ground texture a bit
 
 	glEnable(GL_TEXTURE_2D);	// Enable 2D texturing
 
-	glBindTexture(GL_TEXTURE_2D, tex_wall.texture[0]);	// Bind the ground texture
-
+	glBindTexture(GL_TEXTURE_2D, tex_wall.texture[0]);	
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glNormal3f(1, 0, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(-wallHalfLength, 0, -wallHalfWidth);
 	glTexCoord2f(4, 0);
@@ -640,7 +727,7 @@ void RenderWall() {
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glNormal3f(1, 0, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(wallHalfLength, 0, -wallHalfWidth);
 	glTexCoord2f(4, 0);
@@ -654,7 +741,7 @@ void RenderWall() {
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glNormal3f(0, 0, -1);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(-wallHalfLength, 0, wallHalfWidth);
 	glTexCoord2f(4, 0);
@@ -668,7 +755,7 @@ void RenderWall() {
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glNormal3f(0, 0, 1);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(-wallHalfLength, 0, -wallHalfWidth);
 	glTexCoord2f(4, 0);
@@ -682,7 +769,7 @@ void RenderWall() {
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glNormal3f(0, 0, 1);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(-wallHalfLength, -5, -5);
 	glTexCoord2f(4, 0);
@@ -696,7 +783,7 @@ void RenderWall() {
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glNormal3f(-1, 0, 0);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(wallHalfLength, -5, -5);
 	glTexCoord2f(4, 0);
@@ -710,7 +797,7 @@ void RenderWall() {
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glNormal3f(0, 0, 1);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(wallHalfLength, -5, -5);
 	glTexCoord2f(4, 0);
@@ -724,7 +811,7 @@ void RenderWall() {
 
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glNormal3f(0, 1, 0);	// Set quad normal direction.
+	glNormal3f(0, 0, -1);	// Set quad normal direction.
 	glTexCoord2f(0, 0);		// Set tex coordinates ( Using (0,0) -> (5,5) with texture wrapping set to GL_REPEAT to simulate the ground repeated grass texture).
 	glVertex3f(wallHalfLength, -5, 5);
 	glTexCoord2f(4, 0);
@@ -739,9 +826,8 @@ void RenderWall() {
 	glColor3f(1, 1, 1);	// Set material back to white instead of grey used for the ground texture.
 }
 
-
 void RenderWall2() {
-	glDisable(GL_LIGHTING);	// Disable lighting 
+	//glDisable(GL_LIGHTING);	// Disable lighting 
 
 	glColor3f(0.6, 0.6, 0.6);	// Dim the ground texture a bit
 
@@ -863,7 +949,9 @@ void RenderWall2() {
 
 	glColor3f(1, 1, 1);	// Set material back to white instead of grey used for the ground texture.
 }
+
 void RenderCube() {
+	isButtonPressed = false;
 	if (isCubeGrabbed) {
 		float cubeOffsetX = 3.0f * xangle;
 		float cubeOffsetY = 1.0;
@@ -876,6 +964,7 @@ void RenderCube() {
 	else if (cube.x > 8 && cube.x < 10 && cube.z > 8 && cube.z < 10 && cube.y >= 0.441) {
 		cube.y -= 0.02 / cube.y;
 		if (cube.y < 0.441) {
+			isButtonPressed = true;
 			cube.y = 0.441;
 		}
 	}
@@ -913,6 +1002,33 @@ void RenderTargetPortal() {
 	glVertex3f(x + 1, y, z + 1);
 	glTexCoord2f(0, 4);
 	glVertex3f(x + 1, y, z - 1);
+	glEnd();
+	glPopMatrix();
+}
+
+void RenderTargetPortal2() {
+	float x = 5, y = 1.75, z = -14.99;
+
+	glEnable(GL_TEXTURE_2D);
+	if (isButtonPressed || buttonCollide) {
+	glBindTexture(GL_TEXTURE_2D, tex_portal1.texture[0]);
+		glColor3f(0, 1, 0);
+	} else {
+		glBindTexture(GL_TEXTURE_2D, tex_portal2.texture[0]);
+		glColor3f(1, 0, 0);
+	}
+
+	glPushMatrix();
+	glBegin(GL_QUADS);
+	glNormal3f(0, 1, 0);
+	glTexCoord2f(0, 0);
+	glVertex3f(x - 1, y - 1.75, z);
+	glTexCoord2f(4, 0);
+	glVertex3f(x - 1, y + 1.75, z);
+	glTexCoord2f(4, 4);
+	glVertex3f(x + 1, y + 1.75, z);
+	glTexCoord2f(0, 4);
+	glVertex3f(x + 1, y - 1.75, z);
 	glEnd();
 	glPopMatrix();
 }
@@ -965,7 +1081,6 @@ void drawPortal2(float x, float y, float z) {
 	if (x == 0 && z == 0) {
 		return;
 	}
-	glDisable(GL_LIGHTING);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, tex_portal2.texture[0]);	// Bind the ground texture
 	glColor3f(1, 1, 1);	// Dim the ground texture a bit
@@ -1228,6 +1343,72 @@ void setupCamera() {
 	gluPerspective(60, 640 / 480, 0.001, 100);
 }
 
+void RenderFire() {
+	bool isDead = false;
+	float fireRadius = 0.6;
+
+	for (int i = 0; i < 6; i++) {
+		glPushMatrix();
+		glTranslatef((i / 2.0) + 8, 0, 7.4);
+		glScalef(0.5, 0.5, 0.5);
+		model_fire.Draw();
+		glPopMatrix();
+
+		glPushMatrix();
+		glTranslatef(7.4, 0, (i / 2.0) + 7.75);
+		glScalef(0.5, 0.5, 0.5);
+		model_fire.Draw();
+		glPopMatrix();
+
+		glPushMatrix();
+		glTranslatef((i / 2.0) + 8, 0, 10.6);
+		glScalef(0.5, 0.5, 0.5);
+		model_fire.Draw();
+		glPopMatrix();
+
+		float d1 = sqrt(pow((i / 2.0) + 8 - playerX, 2) + pow(7.4 - playerZ, 2));
+		float d2 = sqrt(pow(7.4 - playerX, 2) + pow((i / 2.0) + 7.75 - playerZ, 2));
+		float d3 = sqrt(pow((i / 2.0) - playerX, 2) + pow(10.6 - playerZ, 2));
+
+		if (d1 < fireRadius || d2 < fireRadius || d3 < fireRadius) {
+			resetPlayer();
+		}
+	}
+
+	glPushMatrix();
+	glTranslatef(10.5, 0, 10.1);
+	glScalef(0.5, 0.5, 0.5);
+	model_fire.Draw();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(10.5, 0, 7.9);
+	glScalef(0.5, 0.5, 0.5);
+	model_fire.Draw();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(8, 0, 10.1);
+	glScalef(0.5, 0.5, 0.5);
+	model_fire.Draw();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(8, 0, 7.9);
+	glScalef(0.5, 0.5, 0.5);
+	model_fire.Draw();
+	glPopMatrix();
+
+	float d1 = sqrt(pow(10.5 - playerX, 2) + pow(10.1 - playerZ, 2));
+	float d2 = sqrt(pow(10.5 - playerX, 2) + pow(7.9 - playerZ, 2));
+	float d3 = sqrt(pow(8 - playerX, 2) + pow(10.1 - playerZ, 2));
+	float d4 = sqrt(pow(10.1 - playerX, 2) + pow(7.9 - playerZ, 2));
+	
+	if (d1 < fireRadius || d2 < fireRadius || d3 < fireRadius || d4 < fireRadius) {
+		resetPlayer();
+	}
+}
+
 void grabCube() {
 	if (isCubeGrabbed) {
 		isCubeGrabbed = false;
@@ -1282,20 +1463,14 @@ void myDisplay(void) {
 
 	RenderCrates();
 
+	drawCandle(14, 2.5, 14);
+
+	RenderCubeLight();
+
 	RenderGun();
 
 	drawPortal1(portal1Coords.x, portal1Coords.y, portal1Coords.z);
 	drawPortal2(portal2Coords.x, portal2Coords.y, portal2Coords.z);
-
-
-	GLfloat lightIntensity[] = { 0.7, 0.7, 0.7, 1.0f };
-	GLfloat lightPosition[] = { 0.0f, 100.0f, 0.0f, 0.0f };
-	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, lightIntensity);
-
-	glPushMatrix();
-	glScalef(3, 3, 3);
-	glPopMatrix();
 
 	RenderTargetPortal();
 
@@ -1328,7 +1503,7 @@ void myDisplay2(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//setupCamera();
-	InitLightSource();
+	//InitLightSource();
 	glLoadIdentity();
 	diamondCollision();
 
@@ -1349,12 +1524,15 @@ void myDisplay2(void)
 		RenderPlayer();
 	}
 
+	RenderFire();
+
 	RenderGun();
 
 	RenderCube();
-
 	// Draw Ground
 	RenderGround2();
+
+	RenderTargetPortal2();
 
 	RenderWall2();
 
@@ -1436,6 +1614,10 @@ void myDisplay2(void)
 	glutSwapBuffers();
 }
 
+void displayGameOver() {
+
+}
+
 //=======================================================================
 // Keyboard Function
 //=======================================================================
@@ -1501,6 +1683,8 @@ void LoadAssets()
 	//model_tree.Load("Models/mytree/tree1.3ds");
 	model_button.Load("Models/button/button.3ds");
 	model_diamond.Load("Models/diamond/diamond.3ds");
+	model_candle.Load("Models/candle/candle.3ds");
+	model_fire.Load("Models/fire/fire.3ds");
 
 	// Loading texture files
 	tex_ground.Load("Textures/ground.bmp");
@@ -1547,21 +1731,17 @@ void Special(int key, int x, int y) {
 	glutPostRedisplay();
 }
 
-void resetPlayer() {
-	playerX = 0;
-	playerY = 0;
-	playerZ = -10;
-	spikeHeight = 24.9;
-	spikeForward = true;
-	// TODO +Time penalty / decrease score
-}
 
 bool groundCollided(float x,  float y, float z) {
 	if (sceneNumber == 1 && z >= -5 && z <= 5) {
 		if (y >= -5) {
 			return false;
 		}
-	} else if (y >= 0) {
+	}
+	else if (sceneNumber == 2 && playerX > 8.0 && playerX < 10.0 && playerZ > 8.0 && playerZ < 10.0) {
+		if (y <= 0.51) return true;
+	}
+	else if (y > 0) {
 		return false;
 	}
 	return true;
@@ -1733,6 +1913,10 @@ void movementTimerScene1(int value) {
 	}
 }
 
+bool atTarget2() {
+	return playerZ <= -14.4 && playerX < 6 && playerX > 4;
+}
+
 void movementTimerScene2(int value) {
 	handleTeleports();
 
@@ -1776,6 +1960,11 @@ void movementTimerScene2(int value) {
 		playerY -= speed * 2;
 	}
 
+	if (isButtonPressed && atTarget2()) {
+		displayGameOver();
+		std::cout << "Game Over";
+	}
+
 	playerX = newX;
 	playerZ = newZ;
 
@@ -1785,6 +1974,7 @@ void movementTimerScene2(int value) {
 }
 
 void spikeTimer(int value) {
+	float speed = 0.04;
 	if (spikeHeight <= 4) {
 		spikeForward = false;
 	}
@@ -1792,10 +1982,10 @@ void spikeTimer(int value) {
 		spikeForward = true;
 	}
 	if (spikeForward) {
-		spikeHeight -= 0.02;
+		spikeHeight -= speed;
 	}
 	else {
-		spikeHeight += 0.02;
+		spikeHeight += speed;
 	}
 	glutPostRedisplay();
 	glutTimerFunc(16, spikeTimer, 0);
@@ -1883,7 +2073,7 @@ void main(int argc, char** argv)
 	LoadAssets();
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
+	//glEnable(GL_LIGHT0);
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_COLOR_MATERIAL);
 
