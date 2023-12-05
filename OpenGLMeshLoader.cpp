@@ -236,7 +236,7 @@ void playButtonPressed() {
 }
 
 void playTeleport() {
-	// play teleport sound
+	PlaySound(TEXT("teleport.wav"), NULL, SND_FILENAME | SND_ASYNC);
 }
 
 void resetPlayer() {
@@ -250,7 +250,7 @@ void resetPlayer() {
 	portal1Coords = glm::vec3(0, 0, 0);
 	portal2Coords = glm::vec3(0, 0, 0);
 	cube = glm::vec3(-8, 0, -8);
-	// TODO +Time penalty / decrease score
+	score -= 50;
 }
 //=======================================================================
 // Material Configuration Function
@@ -1612,7 +1612,7 @@ void setupCamera() {
 
 void RenderFire() {
 	bool isDead = false;
-	float fireRadius = 0.6;
+	float fireRadius = 0.5;
 
 	for (int i = 0; i < 6; i++) {
 		glPushMatrix();
@@ -1638,6 +1638,7 @@ void RenderFire() {
 		float d3 = sqrt(pow((i / 2.0) - playerX, 2) + pow(10.6 - playerZ, 2));
 
 		if (d1 < fireRadius || d2 < fireRadius || d3 < fireRadius) {
+			std::cout << "wtf1";
 			resetPlayer();
 		}
 	}
@@ -1672,6 +1673,7 @@ void RenderFire() {
 	float d4 = sqrt(pow(10.1 - playerX, 2) + pow(7.9 - playerZ, 2));
 	
 	if (d1 < fireRadius || d2 < fireRadius || d3 < fireRadius || d4 < fireRadius) {
+		std::cout << "wtf";
 		resetPlayer();
 	}
 }
