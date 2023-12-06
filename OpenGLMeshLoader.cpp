@@ -159,7 +159,7 @@ float xangle = 0.0f, yangle = 1.0f, zangle = -1.0f; // Camera angles
 float x_pos = 0.0f, y_pos = 0.0f; // Camera yaw
 float sensitivity = 0.005f;
 
-int sceneNumber = 1;
+int sceneNumber = 2;
 
 // Model Variables
 Model_3DS model_house;
@@ -1936,6 +1936,7 @@ void myDisplay2(void)
 		displayGameOver();
 		isGameOver = true;
 		isPlayerFrozen = true;
+		playWin();
 	}
 	glutSwapBuffers();
 }
