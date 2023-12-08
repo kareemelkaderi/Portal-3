@@ -1278,16 +1278,13 @@ void RenderTargetPortal2() {
 }
 
 void drawPortal1(float x, float y, float z) {
-	if ((x > -15 && x < -4 && z > -15 && z <-4 && y>scene1Height / 1.5) || (playerX <-4 && playerZ < -4 ) || (x > -2.5 || z > -3.5)) {
+	if (sceneNumber == 1 || (sceneNumber == 2 && (x > -15 && x < -4 && z > -15 && z <-4 && y>scene1Height / 1.5) || (playerX < -4 && playerZ < -4) || (x > -2.5 || z > -3.5))) {
 		if (x == 0 && z == 0) {
 			return;
 		}
 		glDisable(GL_LIGHTING);
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, tex_portal1.texture[0]);	// Bind the ground texture
-		float startAngle = 0;
-		float endAngle = 3.141592;
-		int numSegments = 20;
 
 		glPushMatrix();
 		glTranslatef(x, y, z);
@@ -1324,13 +1321,19 @@ void drawPortal1(float x, float y, float z) {
 
 		glEnable(GL_LIGHTING);
 		if (portal1Scale < 1) {
-			portal1Scale += 0.05;
+			if (portal1Scale == 0) {
+				portal1Scale = 0.1;
+			}
+			portal1Scale *= 1.2;
+			if (portal1Scale > 1) {
+				portal1Scale = 1;
+			}
 		}
 	}
 }
 
 void drawPortal2(float x, float y, float z) {
-	if ((x > -15 && x < -4 && z > -15 && z <-4 && y>scene1Height / 1.5) || (playerX < -4 && playerZ < -4) || (x > -2.5 || z > -3.5)) {
+	if (sceneNumber == 1 || (sceneNumber == 2 && (x > -15 && x < -4 && z > -15 && z <-4 && y>scene1Height / 1.5) || (playerX < -4 && playerZ < -4) || (x > -2.5 || z > -3.5))) {
 
 		if (x == 0 && z == 0) {
 			return;
@@ -1375,7 +1378,13 @@ void drawPortal2(float x, float y, float z) {
 
 		glEnable(GL_LIGHTING);
 		if (portal2Scale < 1) {
-			portal2Scale += 0.05;
+			if (portal2Scale == 0) {
+				portal2Scale = 0.1;
+			}
+			portal2Scale *= 1.2;
+			if (portal2Scale > 1) {
+				portal2Scale = 1;
+			}
 		}
 	}
 }
@@ -1391,15 +1400,30 @@ void setPortal1() {
 		towardsZWall = playerZ < playerZ + zangle;
 	}
 	else {
-		float cameraOffsetX = -6.0f * xangle;
-		float cameraOffsetY =  yangle;
-		float cameraOffsetZ = -6.0f * zangle;
+		float cameraOffsetX = -4.0f * xangle;
+		float cameraOffsetY =  2*yangle;
+		float cameraOffsetZ = -4.0f * zangle;
 
 		float cameraX = playerX + cameraOffsetX;
-		float cameraY = playerEyeY + cameraOffsetY;
+		float cameraY = playerEyeY + cameraOffsetY + 1;
 		float cameraZ = playerZ + cameraOffsetZ;
+		if (cameraX > 14.9) {
+			cameraX = 14.9;
+		}
+		else if (cameraX < -14.9) {
+			cameraX = -14.9;
+		}
+		if (cameraZ > 14.9) {
+			cameraZ = 14.9;
+		}
+		else if (cameraZ < -14.9) {
+			cameraZ = -14.9;
+		}
+		if (cameraY > 24.9) {
+			cameraY = 24.9;
+		}
 		rayOrigin = glm::vec3(cameraX, cameraY, cameraZ); // Camera's position is the ray's origin
-		rayDirection = glm::normalize(glm::vec3(cameraOffsetX, yangle - 0.4, cameraOffsetZ));
+		rayDirection = glm::normalize(glm::vec3(playerX - cameraX, playerEyeY - cameraOffsetY - cameraY, playerZ - cameraZ));
 		towardsXWall = cameraX < playerX;
 		towardsZWall = cameraZ < playerZ;
 	}
@@ -1450,16 +1474,19 @@ void setPortal1() {
 	}	
 
 	// diagonal = 2.02
-	float distance = sqrt(pow(portal2Coords.x - newX, 2) + pow(portal2Coords.y - newY, 2) + pow(portal2Coords.z - newZ, 2));
-	if (distance >= 4.04) {
-		portal1XNormal = newPortalNormal;
-		portal1Coords = glm::vec3(newX, newY, newZ);
-		portal1Scale = 0;
-		gunYForward = true;
+	if (sceneNumber == 1 || (sceneNumber == 2 && (newX > -15 && newX < -4 && newZ > -15 && newZ <-4 && newY>scene1Height / 1.5) || (playerX < -4 && playerZ < -4) || (newX > -2.5 || newZ > -3.5))) {
+		float distance = sqrt(pow(portal2Coords.x - newX, 2) + pow(portal2Coords.y - newY, 2) + pow(portal2Coords.z - newZ, 2));
+		if (distance >= 4.04) {
+			portal1XNormal = newPortalNormal;
+			portal1Coords = glm::vec3(newX, newY, newZ);
+			portal1Scale = 0;
+			gunYForward = true;
+		}
+		else {
+			playCollide();
+		}
 	}
-	else {
-		playCollide();
-	}
+	
 }
 
 void setPortal2() {
@@ -1473,15 +1500,30 @@ void setPortal2() {
 		towardsZWall = playerZ < playerZ + zangle;
 	}
 	else {
-		float cameraOffsetX = -6.0f * xangle;
-		float cameraOffsetY = yangle;
-		float cameraOffsetZ = -6.0f * zangle;
+		float cameraOffsetX = -4.0f * xangle;
+		float cameraOffsetY = 2*yangle;
+		float cameraOffsetZ = -4.0f * zangle;
 
 		float cameraX = playerX + cameraOffsetX;
-		float cameraY = playerEyeY + cameraOffsetY;
+		float cameraY = playerEyeY + cameraOffsetY + 1;
 		float cameraZ = playerZ + cameraOffsetZ;
+		if (cameraX > 14.9) {
+			cameraX = 14.9;
+		}
+		else if (cameraX < -14.9) {
+			cameraX = -14.9;
+		}
+		if (cameraZ > 14.9) {
+			cameraZ = 14.9;
+		}
+		else if (cameraZ < -14.9) {
+			cameraZ = -14.9;
+		}
+		if (cameraY > 24.9) {
+			cameraY = 24.9;
+		}
 		rayOrigin = glm::vec3(cameraX, cameraY, cameraZ); // Camera's position is the ray's origin
-		rayDirection = glm::normalize(glm::vec3(cameraOffsetX,yangle - 0.4, cameraOffsetZ));
+		rayDirection = glm::normalize(glm::vec3(playerX - cameraX, playerEyeY - cameraOffsetY - cameraY, playerZ - cameraZ));
 		towardsXWall = cameraX < playerX;
 		towardsZWall = cameraZ < playerZ;
 	}
@@ -1530,16 +1572,17 @@ void setPortal2() {
 		newY = yAtZn15 < 1.75 ? 1.75 : yAtZn15;
 		newZ = -14.99;
 	}
-
-	float distance = sqrt(pow(portal1Coords.x - newX, 2) + pow(portal1Coords.y - newY, 2) + pow(portal1Coords.z - newZ, 2));
-	if (distance >= 4.04) {
-		portal2XNormal = newPortalNormal;
-		portal2Coords = glm::vec3(newX, newY, newZ);
-		portal2Scale = 0;
-		gunYForward = true;
-	}
-	else {
-		playCollide();
+	if (sceneNumber == 1 || (sceneNumber == 2 && (newX > -15 && newX < -4 && newZ > -15 && newZ <-4 && newY>scene1Height / 1.5) || (playerX < -4 && playerZ < -4) || (newX > -2.5 || newZ > -3.5))) {
+		float distance = sqrt(pow(portal1Coords.x - newX, 2) + pow(portal1Coords.y - newY, 2) + pow(portal1Coords.z - newZ, 2));
+		if (distance >= 4.04) {
+			portal2XNormal = newPortalNormal;
+			portal2Coords = glm::vec3(newX, newY, newZ);
+			portal2Scale = 0;
+			gunYForward = true;
+		}
+		else {
+			playCollide();
+		}
 	}
 }
 
@@ -1554,7 +1597,7 @@ void drawWireCuboid(float minX, float minY, float minZ, float maxX, float maxY, 
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Set to draw wireframe
 
-	glColor3f(1.0, 1.0, 1.0); // Set color to white
+	glColor3f(1.0, 0.0, 0.0); // Set color to white
 
 	glBegin(GL_QUADS);
 
@@ -1635,10 +1678,10 @@ void RenderFire() {
 
 		float d1 = sqrt(pow((i / 2.0) + 8 - playerX, 2) + pow(7.4 - playerZ, 2));
 		float d2 = sqrt(pow(7.4 - playerX, 2) + pow((i / 2.0) + 7.75 - playerZ, 2));
-		float d3 = sqrt(pow((i / 2.0) - playerX, 2) + pow(10.6 - playerZ, 2));
+		float d3 = sqrt(pow((i / 2.0) + 8 - playerX, 2) + pow(10.6 - playerZ, 2));
 
-		if (d1 < fireRadius || d2 < fireRadius || d3 < fireRadius) {
-			std::cout << "wtf1";
+		if (playerY == 0 && d1 < fireRadius || d2 < fireRadius || d3 < fireRadius) {
+			std::cout << "here";
 			resetPlayer();
 		}
 	}
@@ -1672,8 +1715,7 @@ void RenderFire() {
 	float d3 = sqrt(pow(8 - playerX, 2) + pow(10.1 - playerZ, 2));
 	float d4 = sqrt(pow(10.1 - playerX, 2) + pow(7.9 - playerZ, 2));
 	
-	if (d1 < fireRadius || d2 < fireRadius || d3 < fireRadius || d4 < fireRadius) {
-		std::cout << "wtf";
+	if (playerY == 0 && d1 < fireRadius || d2 < fireRadius || d3 < fireRadius || d4 < fireRadius) {
 		resetPlayer();
 	}
 }
@@ -1713,18 +1755,31 @@ void myDisplay(void) {
 
 	if (isFPV) {
 		gluLookAt(playerX, playerEyeY, playerZ, playerX + xangle, playerEyeY - yangle, playerZ + zangle, 0.0f, abs(playerEyeY), 0.0f);
-		drawCrosshair(playerX + xangle, playerEyeY - yangle, playerZ + zangle, 0.005);
 	}
 	else {
-		float cameraOffsetX = -6.0f * xangle;
-		float cameraOffsetY = yangle;
-		float cameraOffsetZ = -6.0f * zangle;
+		float cameraOffsetX = -4.0f * xangle;
+		float cameraOffsetY = 2*yangle;
+		float cameraOffsetZ = -4.0f * zangle;
 
 		float cameraX = playerX + cameraOffsetX;
-		float cameraY = playerEyeY + cameraOffsetY;
+		float cameraY = playerEyeY + cameraOffsetY + 1;
 		float cameraZ = playerZ + cameraOffsetZ;
-		gluLookAt(cameraX, cameraY, cameraZ, playerX, playerEyeY + 0.4, playerZ, 0.0f, abs(playerEyeY), 0.0f);
-		drawCrosshair(playerX, playerEyeY + 0.4, playerZ, 0.01);
+		if (cameraX > 14.9) {
+			cameraX = 14.9;
+		}
+		else if (cameraX < -14.9) {
+			cameraX = -14.9;
+		}
+		if (cameraZ > 14.9) {
+			cameraZ = 14.9;
+		}
+		else if (cameraZ < -14.9) {
+			cameraZ = -14.9;
+		}
+		if (cameraY > 24.9) {
+			cameraY = 24.9;
+		}
+		gluLookAt(cameraX, cameraY, cameraZ, playerX, playerEyeY - cameraOffsetY, playerZ, 0.0f, abs(playerEyeY), 0.0f);
 		RenderPlayer();
 	}
 
@@ -1799,6 +1854,12 @@ void myDisplay(void) {
 			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, timerText[i]);
 		}
 
+		glColor3f(1.0f, 0.0f, 0.0f);
+		char crossHair = '+';
+		glRasterPos2f(WIDTH / 2.0 - 4, HEIGHT / 2.0 - 3.5);
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, crossHair);
+		glColor3f(1.0f, 1.0f, 1.0f);
+
 		// Restore the projection and modelview matrices
 		glPopMatrix();
 		glMatrixMode(GL_PROJECTION);
@@ -1820,18 +1881,31 @@ void myDisplay2(void)
 
 	if (isFPV) {
 		gluLookAt(playerX, playerEyeY, playerZ, playerX + xangle, playerEyeY - yangle, playerZ + zangle, 0.0f, abs(playerEyeY), 0.0f);
-		drawCrosshair(playerX + xangle, playerEyeY - yangle, playerZ + zangle, 0.005);
 	}
 	else {
-		float cameraOffsetX = -6.0f * xangle;
-		float cameraOffsetY = yangle;
-		float cameraOffsetZ = -6.0f * zangle;
+		float cameraOffsetX = -4.0f * xangle;
+		float cameraOffsetY = 2*yangle;
+		float cameraOffsetZ = -4.0f * zangle;
 
 		float cameraX = playerX + cameraOffsetX;
-		float cameraY = playerEyeY + cameraOffsetY;
+		float cameraY = playerEyeY + cameraOffsetY + 1;
 		float cameraZ = playerZ + cameraOffsetZ;
-		gluLookAt(cameraX, cameraY, cameraZ, playerX, playerEyeY + 0.4, playerZ, 0.0f, abs(playerEyeY), 0.0f);
-		drawCrosshair(playerX, playerEyeY + 0.4, playerZ, 0.01);
+		if (cameraX > 14.9) {
+			cameraX = 14.9;
+		}
+		else if (cameraX < -14.9) {
+			cameraX = -14.9;
+		}
+		if (cameraZ > 14.9) {
+			cameraZ = 14.9;
+		}
+		else if (cameraZ < -14.9) {
+			cameraZ = -14.9;
+		}
+		if (cameraY > 24.9) {
+			cameraY = 24.9;
+		}
+		gluLookAt(cameraX, cameraY, cameraZ, playerX, playerEyeY - cameraOffsetY, playerZ, 0.0f, abs(playerEyeY), 0.0f);
 		RenderPlayer();
 	}
 
@@ -1924,6 +1998,12 @@ void myDisplay2(void)
 		for (int i = 0; timerText[i] != '\0'; i++) {
 			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, timerText[i]);
 		}
+
+		glColor3f(1.0f, 0.0f, 0.0f);
+		char crossHair = '+';
+		glRasterPos2f(WIDTH / 2.0 - 4, HEIGHT / 2.0 - 3.5);
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, crossHair);
+		glColor3f(1.0f, 1.0f, 1.0f);
 
 		// Restore the projection and modelview matrices
 		glPopMatrix();
@@ -2152,17 +2232,18 @@ void handleTeleports() {
 }
 
 void toScene2() {
-	sceneNumber = 2;
 	portal1Coords = glm::vec3(0, 0, 0);
 	portal2Coords = glm::vec3(0, 0, 0);
-	playerZ = 15;
+	playerZ = 13;
 
 	playWin();
+	sceneNumber = 2;
+	movementTimerScene2(0);
 	glutDisplayFunc(myDisplay2);
 	glutPostRedisplay();
-	glutTimerFunc(16, movementTimerScene2, 0);
 }
 
+float airTime = 0;
 void movementTimerScene1(int value) {
 	handleTeleports();
 	handleRingCollection();
@@ -2207,16 +2288,24 @@ void movementTimerScene1(int value) {
 	bool atTarget = false;
 
 	if (!groundCollided(newX, playerY, newZ)) {
-		newY -= speed * 2;
+		airTime += 5.0 / 1000;
+		newY -= airTime;
+	}
+	else {
+		airTime = 0;
 	}
 
 	if (newY <= -5) {
 		isDead = true;
 	}
+	if (newY < 0) {
+		newY = 0;
+	}
 
 	// On top of wall
-	if (newZ <= -5 && newY < spikeHeight + spikeCubeHeight && newY > spikeHeight + spikeCubeHeight - 0.3) {
+	if (newZ <= -5 && newY < spikeHeight + spikeCubeHeight && newY > spikeHeight + spikeCubeHeight - 1) {
 		newY = spikeHeight + spikeCubeHeight;
+		airTime = 0;
 		if (newY >= 23 && newZ < -13 && newX < 1 && newX > -1) { // Check for goal reached
 			atTarget = true;
 		} else if (newY >= 23.1) {
@@ -2266,6 +2355,7 @@ void movementTimerScene2(int value) {
 
 		float speed = 0.1;
 		float newX = playerX;
+		float newY = playerY;
 		float newZ = playerZ;
 
 		if (keystates['w']) { // Forward
@@ -2300,8 +2390,11 @@ void movementTimerScene2(int value) {
 		}
 
 		if (!groundCollided(newX, playerY, newZ)) {
-			playerEyeY -= speed * 2;
-			playerY -= speed * 2;
+			airTime += 5.0 / 1000;
+			newY -= airTime;
+		}
+		else {
+			airTime = 0;
 		}
 
 	if (atTarget2()) {
@@ -2315,7 +2408,9 @@ void movementTimerScene2(int value) {
 	}
 
 	playerX = newX;
+	playerY = newY;
 	playerZ = newZ;
+	playerEyeY = playerY + 2;
 
 		glutPostRedisplay();
 		glutTimerFunc(16, movementTimerScene2, 0);
