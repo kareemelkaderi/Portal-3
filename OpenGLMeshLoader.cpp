@@ -159,7 +159,7 @@ float xangle = 0.0f, yangle = 1.0f, zangle = -1.0f; // Camera angles
 float x_pos = 0.0f, y_pos = 0.0f; // Camera yaw
 float sensitivity = 0.005f;
 
-int sceneNumber = 2;
+int sceneNumber = 1;
 
 // Model Variables
 Model_3DS model_house;
@@ -246,70 +246,14 @@ void resetPlayer() {
 	spikeHeight = 24.9;
 	spikeForward = true;
 	isCubeGrabbed = false;
+	isRingCollected = false;
+	diamondCollide = false;
+	diamondCollide2 = false;
 	playDead();
 	portal1Coords = glm::vec3(0, 0, 0);
 	portal2Coords = glm::vec3(0, 0, 0);
 	cube = glm::vec3(-8, 0, -8);
 	score -= 50;
-}
-//=======================================================================
-// Material Configuration Function
-//======================================================================
-void InitMaterial()
-{
-
-	// Enable Material Tracking
-	glEnable(GL_COLOR_MATERIAL);
-
-	// Sich will be assigneet Material Properties whd by glColor
-	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
-
-	// Set Material's Specular Color
-	// Will be applied to all objects
-	GLfloat specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
-
-	// Set Material's Shine value (0->128)
-	GLfloat shininess[] = { 96.0f };
-	glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
-}
-
-//=======================================================================
-// OpengGL Configuration Function
-//=======================================================================
-void myInit(void)
-{
-	glEnable(GL_LIGHTING);
-
-	glClearColor(0.0, 0.0, 0.0, 0.0);
-
-	glMatrixMode(GL_PROJECTION);
-
-	glLoadIdentity();
-
-	gluPerspective(fovy, aspectRatio, zNear, zFar);
-	//*******************************************************************************************//
-	// fovy:			Angle between the bottom and top of the projectors, in degrees.			 //
-	// aspectRatio:		Ratio of width to height of the clipping plane.							 //
-	// zNear and zFar:	Specify the front and back clipping planes distances from camera.		 //
-	//*******************************************************************************************//
-
-	glMatrixMode(GL_MODELVIEW);
-
-	glLoadIdentity();
-
-	//gluLookAt(Eye.x, Eye.y, Eye.z, At.x, At.y, At.z, Up.x, Up.y, Up.z);
-	//*******************************************************************************************//
-	// EYE (ex, ey, ez): defines the location of the camera.									 //
-	// AT (ax, ay, az):	 denotes the direction where the camera is aiming at.					 //
-	// UP (ux, uy, uz):  denotes the upward orientation of the camera.							 //
-	//*******************************************************************************************//
-
-	InitMaterial();
-
-	glEnable(GL_DEPTH_TEST);
-
-	glEnable(GL_NORMALIZE);
 }
 
 //=======================================================================
@@ -501,8 +445,6 @@ void displayGameOver() {
 }
 
 
-
-
 float gunZAnim = -0.9;
 bool gunYForward = false;
 float gunYAngle = 0;
@@ -549,6 +491,7 @@ void RenderGun() {
 		glTranslatef(playerX, playerY + 1, playerZ);
 		glRotatef(angle - 190, 0, 1, 0);
 		glTranslatef(0.3, 0, -0.6);
+		glRotatef(gunYAngle, 1, 0, 0);
 		glScalef(0.5, 0.5, 0.5);
 		model_gun.Draw();
 		glPopMatrix();
@@ -589,7 +532,7 @@ float diamondScale = 0.7;
 float scaleIncrement = 0.01; 
 float minScale = 0.7;
 float maxScale = 1.0;
-bool growing = true;  
+bool growing = true;
 
 void RenderDiamond() {
 	glPushMatrix();
@@ -747,7 +690,6 @@ void cubeCollision() {
 		}
 	}
 }
-
 
 void RenderPlayer() {
 	float dx = playerX - (playerX - xangle);
@@ -1223,6 +1165,9 @@ void RenderCube() {
 }
 
 bool atTarget2() {
+	if (playerZ <= -14.4 && playerX < 6 && playerX > 4 && isButtonPressed && !isGameOver) {
+		playWin();
+	}
 	return playerZ <= -14.4 && playerX < 6 && playerX > 4;
 }
 
@@ -1804,21 +1749,6 @@ void myDisplay(void) {
 
 	RenderSpike();
 
-	//sky box
-	glPushMatrix();
-
-	GLUquadricObj* qobj;
-	qobj = gluNewQuadric();
-	glTranslated(50, 0, 0);
-	glRotated(90, 1, 0, 1);
-	glBindTexture(GL_TEXTURE_2D, tex);
-	gluQuadricTexture(qobj, true);
-	gluQuadricNormals(qobj, GL_SMOOTH);
-	gluSphere(qobj, 100, 100, 100);
-	gluDeleteQuadric(qobj);
-
-	glPopMatrix();
-
 	{
 		glDisable(GL_LIGHTING);
 		glMatrixMode(GL_PROJECTION);
@@ -1950,20 +1880,6 @@ void myDisplay2(void)
 	drawWireCuboid(-16.0, 0.0, -16.0, -4.0, scene1Height/1.5, -4.0,20.0);
 	glPopMatrix();
 
-	glPushMatrix();
-
-	GLUquadricObj* qobj;
-	qobj = gluNewQuadric();
-	glTranslated(50, 0, 0);
-	glRotated(90, 1, 0, 1);
-	glBindTexture(GL_TEXTURE_2D, tex);
-	gluQuadricTexture(qobj, true);
-	gluQuadricNormals(qobj, GL_SMOOTH);
-	gluSphere(qobj, 100, 100, 100);
-	gluDeleteQuadric(qobj);
-
-	glPopMatrix();
-
 	{
 		glDisable(GL_LIGHTING);
 		glMatrixMode(GL_PROJECTION);
@@ -2016,7 +1932,6 @@ void myDisplay2(void)
 		displayGameOver();
 		isGameOver = true;
 		isPlayerFrozen = true;
-		playWin();
 	}
 	glutSwapBuffers();
 }
@@ -2083,7 +1998,6 @@ void LoadAssets()
 	model_player.Load("Models/player/payer.3ds");
 	model_crate.Load("Models/crate/crate.3ds");
 	model_ring.Load("Models/ring/ring.3ds");
-	//model_tree.Load("Models/mytree/tree1.3ds");
 	model_button.Load("Models/button/button.3ds");
 	model_diamond.Load("Models/diamond/diamond.3ds");
 	model_candle.Load("Models/candle/candle.3ds");
@@ -2135,7 +2049,6 @@ void Special(int key, int x, int y) {
 
 	glutPostRedisplay();
 }
-
 
 bool groundCollided(float x,  float y, float z) {
 	if (sceneNumber == 1 && z >= -5 && z <= 5) {
@@ -2299,9 +2212,6 @@ void movementTimerScene1(int value) {
 	if (newY <= -5) {
 		isDead = true;
 	}
-	if (newY < 0) {
-		newY = 0;
-	}
 
 	// On top of wall
 	if (newZ <= -5 && newY < spikeHeight + spikeCubeHeight && newY > spikeHeight + spikeCubeHeight - 1) {
@@ -2312,6 +2222,9 @@ void movementTimerScene1(int value) {
 		} else if (newY >= 23.1) {
 			isDead = true;
 		}
+	}
+	else if (newY < 0 && groundCollided(newX,playerY,newZ)) {
+		newY = 0;
 	}
 
 	if (newZ <= -5 && spikeHeight > newY && spikeHeight - newY < 6) { // Squashed
@@ -2396,6 +2309,7 @@ void movementTimerScene2(int value) {
 		}
 		else {
 			airTime = 0;
+			newY = 0;
 		}
 
 	if (atTarget2()) {
