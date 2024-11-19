@@ -17,6 +17,12 @@ A 3D puzzle game inspired by the **Portal** series, developed using **C++** and 
 
 ---
 
+## Demo
+Watch a demo of the project below 
+
+[![Project Demo](https://img.youtube.com/vi/n_Elu3UOK6A/0.jpg)](https://www.youtube.com/watch?v=n_Elu3UOK6A)
+---
+
 ## How to Run
 1. **Clone the repository**:  
    `git clone https://github.com/kareemelkaderi/Portal-3.git`
